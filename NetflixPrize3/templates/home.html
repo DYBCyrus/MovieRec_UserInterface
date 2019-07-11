@@ -1,10 +1,31 @@
 <!DOCTYPE html>
 <html>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script> 
     <head>
         <meta charset="utf-8">
         <title>NetflixPrize3!</title>
+        <div class="ui-widget">
+            <label for="search"> Search </label>
+            <input id="search">
+        </div>
     </head>
     <body>
         <h1>Welcome to NetflixPrize3!</h1>
+        <script type="text/javascript">
+            {% comment %} var arr = ["apple","yeet","yep","ace"]; {% endcomment %}
+            var arr = {{ titles|safe }};
+            $(function() {
+                $("#search").autocomplete({
+                    source: arr,
+                    minLength: 4,
+                    autoFocus: true,
+                    classes: {
+                        "ui-autocomplete": "highlight"
+                    },
+                });
+            });
+        </script>
     </body>
 </html>
