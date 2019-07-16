@@ -7,7 +7,8 @@ import pandas as pd
 import os
 import json
 
-
+df = pd.DataFrame()
+titles = []
 
 def button(request):
     # print(os.getcwd())
@@ -15,7 +16,7 @@ def button(request):
     df = pd.read_csv('IMDB_Final_Movies.csv', delimiter=',')
     title = df['primaryTitle'].tolist()
     year = df['startYear'].tolist()
-    titles = []
+    global titles
     for (i,j) in zip(title,year):
         if not np.isnan(j):
             titles.append(i + '(' + str(int(j)) + ')')
@@ -25,14 +26,17 @@ def button(request):
     return render(request, 'home.html', {'titles': titles})
 
 def fetchFeatures(request):
-    longTitle = request.POST.get('movie_title', False)
+    global df
+    global titles
+    longTitle = request.POST.get('title', False)
     title = ""
+    year = 0
     if longTitle:
         title = longTitle.split('(')
         year = int(title[1].split(')')[0])
         title = title[0]
     # Search the movie entry using the title and the startYear
-    movieEntry = df.query('primaryTitle == title and startYear == year')
+    movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (title, year))
     directors = movieEntry.iloc[0]["directors_names"]
     # return JsonResponse({"directors":directors})
-    return render(request, "home.html", {"directors",directors})
+    return render(request, "home.html", {'titles': titles, "directors":directors})
