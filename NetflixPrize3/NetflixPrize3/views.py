@@ -22,7 +22,6 @@ def button(request):
             titles.append(i + '(' + str(int(j)) + ')')
         else:
             titles.append(i + '(N/A)')
-    print(titles[0])
     return render(request, 'home.html', {'titles': titles})
 
 def fetchFeatures(request):
@@ -33,10 +32,16 @@ def fetchFeatures(request):
     year = 0
     if longTitle:
         title = longTitle.split('(')
-        year = int(title[1].split(')')[0])
-        title = title[0]
-    # Search the movie entry using the title and the startYear
-    movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (title, year))
+        ti = title[0]
+        if (df.query('primaryTitle == "%s"' % (ti))).empty:
+            return render(request, "home.html", {'titles': titles, "titleInvalid":True})
+        if '(N/A)' not in longTitle:
+            year = int(title[1].split(')')[0])
+    if year != 0:
+        # Search the movie entry using the title and the startYear
+        movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (ti, year))
+    else:
+        movieEntry = df.query('primaryTitle == "%s"' % (ti))
     directors = movieEntry.iloc[0]["directors_names"]
     # return JsonResponse({"directors":directors})
     return render(request, "home.html", {'titles': titles, "directors":directors})
