@@ -2,7 +2,7 @@
 <html>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
     <head>
         <style>
             .ui-autocomplete { height: 200px; width: 300px; overflow-y: scroll; overflow-x: scroll; }
@@ -10,17 +10,12 @@
         </style>
         <meta charset="utf-8">
         <title>NetflixPrize3!</title>
-        <div class="ui-widget">
-            <label for="search"> Search </label>
-            <input id="search">
-        </div>
-    </head>
-    <body>
-        <h1>Welcome to NetflixPrize3!</h1>
+
+        <!-- The following script defines parameters for the autocomplete -->
         <script type="text/javascript">
             var arr = {{ titles|safe }};
             $(function() {
-                $("#search").autocomplete({
+                $("#title").autocomplete({
                     source: arr,
                     minLength: 4,
                     autoFocus: true,
@@ -30,5 +25,46 @@
                 });
             });
         </script>
+
+        <!-- The following script is for submitting a title -->
+        <!-- <script type="text/javascript">
+        function post(){
+            var title = document.getElementById("title").value;
+            if(title){
+                $.ajax
+                ({
+                    type: 'post',
+                    url: 'fetchFeatures/',
+                    data:
+                    {
+                        movie_title:title
+                    },
+                    success: function (response)
+                    {
+                        document.getElementById("features").innerHTML=directors
+                    }
+                })
+            }
+        }
+        </script> -->
+
+    </head>
+    <body>
+        <h1>Welcome to NetflixPrize3!</h1>
+        <div class="ui-widget">
+            <label for="search"> Search </label>
+            <!-- onsubmit="return post();"  -->
+            <form method="post" action="/fetchFeatures">
+                {% csrf_token %}
+                <input type="text" id="title" name="title">
+            </form>
+        </div>
+        <!-- <div id="features">
+        </div> -->
+        {% if directors is not None %}
+
+        {{directors}}
+
+        {% endif %}
     </body>
 </html>
