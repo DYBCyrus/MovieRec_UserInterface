@@ -37,6 +37,8 @@ def fetchFeatures(request):
             return render(request, "home.html", {'titles': titles, "titleInvalid":True})
         if '(N/A)' not in longTitle:
             year = int(title[1].split(')')[0])
+    else:
+        return render(request, "home.html", {'titles': titles, "titleInvalid":True})
     if year != 0:
         # Search the movie entry using the title and the startYear
         movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (ti, year))
