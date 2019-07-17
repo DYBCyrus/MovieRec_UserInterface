@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.core import serializers
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -41,9 +42,15 @@ def fetchFeatures(request):
         return render(request, "home.html", {'titles': titles, "titleInvalid":True})
     if year != 0:
         # Search the movie entry using the title and the startYear
-        movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (ti, year))
+        movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (ti, year)).\
+                        iloc[0].to_dict()
     else:
-        movieEntry = df.query('primaryTitle == "%s"' % (ti))
-    directors = (movieEntry.iloc[0]["directors_names"]).split('/')
+        movieEntry = df.query('primaryTitle == "%s"' % (ti)).iloc[0].to_dict()
+
+    movieEntry["directors_names"] = movieEntry["directors_names"].split('/')
+    movieEntry["writers_names"] = movieEntry["writers_names"].split('/')
+    movieEntry["cast_name"] = movieEntry["cast_name"].split('/')
+
     # return JsonResponse({"directors":directors})
-    return render(request, "home.html", {'titles': titles, "directors":directors})
+
+    return render(request, "home.html", {'titles': titles, "movieData":movieEntry})
