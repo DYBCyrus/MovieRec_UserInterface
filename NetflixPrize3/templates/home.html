@@ -61,9 +61,19 @@
         </div>
         <!-- <div id="features">
         </div> -->
-        {% if directors is not None %}
+        {% if titleInvalid is not None %}
 
-        {{directors}}
+        <div>
+            Title Invalid!
+        </div>
+
+        {% endif %}
+
+        {% if movieData is not None %}
+
+        <div>
+            {{movieData}}
+        </div>
 
         {% endif %}
     </body>
