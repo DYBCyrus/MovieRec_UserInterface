@@ -44,6 +44,6 @@ def fetchFeatures(request):
         movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (ti, year))
     else:
         movieEntry = df.query('primaryTitle == "%s"' % (ti))
-    directors = movieEntry.iloc[0]["directors_names"]
+    directors = (movieEntry.iloc[0]["directors_names"]).split('/')
     # return JsonResponse({"directors":directors})
     return render(request, "home.html", {'titles': titles, "directors":directors})

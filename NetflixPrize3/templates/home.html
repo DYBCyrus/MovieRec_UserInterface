@@ -26,6 +26,20 @@
             });
         </script>
 
+        <script type="text/javascript">
+            var ge = {{ genres|safe }};
+            $(function() {
+                $("#genre").autocomplete({
+                    source: ge,
+                    minLength: 0,
+                    autoFocus: true,
+                    classes: {
+                        "ui-autocomplete": "highlight"
+                    },
+                });
+            });
+        </script>
+
         <!-- The following script is for submitting a title -->
         <!-- <script type="text/javascript">
         function post(){
@@ -59,6 +73,15 @@
                 <input type="text" id="title" name="title">
             </form>
         </div>
+
+        <div class="ui-widget">
+            <label for="genre"> Genre(Press 'Enter' to select) </label>
+            <form method="post">
+                {% csrf_token %}
+                <input type="text" id="genre" name="genre">
+            </form>
+        </div>
+
         <!-- <div id="features">
         </div> -->
         {% if directors is not None %}
