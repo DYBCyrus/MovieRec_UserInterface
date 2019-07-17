@@ -23,7 +23,6 @@ def button(request):
             titles.append(i + '(' + str(int(j)) + ')')
         else:
             titles.append(i + '(N/A)')
-    print(titles[0])
     return render(request, 'home.html', {'titles': titles})
 
 def fetchFeatures(request):
@@ -34,14 +33,24 @@ def fetchFeatures(request):
     year = 0
     if longTitle:
         title = longTitle.split('(')
-        year = int(title[1].split(')')[0])
-        title = title[0]
-    # Search the movie entry using the title and the startYear
-    movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (title, year)).\
-                    iloc[0].to_dict()
-    directors = movieEntry["directors_names"].split('/')
-    writers = movieEntry["writers_names"].split('/')
-    cast = movieEntry["cast_name"].split('/')
+        ti = title[0]
+        if (df.query('primaryTitle == "%s"' % (ti))).empty:
+            return render(request, "home.html", {'titles': titles, "titleInvalid":True})
+        if '(N/A)' not in longTitle:
+            year = int(title[1].split(')')[0])
+    else:
+        return render(request, "home.html", {'titles': titles, "titleInvalid":True})
+    if year != 0:
+        # Search the movie entry using the title and the startYear
+        movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (ti, year)).\
+                        iloc[0].to_dict()
+    else:
+        movieEntry = df.query('primaryTitle == "%s"' % (ti)).iloc[0].to_dict()
+
+    movieEntry["directors_names"] = movieEntry["directors_names"].split('/')
+    movieEntry["writers_names"] = movieEntry["writers_names"].split('/')
+    movieEntry["cast_name"] = movieEntry["cast_name"].split('/')
+
     # return JsonResponse({"directors":directors})
 
-    return render(request, "home.html", {'titles': titles, "directors":directors})
+    return render(request, "home.html", {'titles': titles, "movieData":movieEntry})
