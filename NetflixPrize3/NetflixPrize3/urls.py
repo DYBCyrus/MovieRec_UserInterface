@@ -21,5 +21,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.button),
     # path('output', views.output, name='script'),
-    path('fetchFeatures', views.fetchFeatures, name="idbuyongguanta")
+    path('fetchFeatures', views.fetchFeatures, name="idbuyongguanta"),
+    path('feedback', views.feedback)
 ]

@@ -54,3 +54,14 @@ def fetchFeatures(request):
     # return JsonResponse({"directors":directors})
 
     return render(request, "home.html", {'titles': titles, "movieData":movieEntry})
+
+def feedback(request):
+    global titles
+    global df
+    likeChoice = request.POST.get('likeChoice', False)
+    lol = ""
+    if likeChoice == "like":
+        lol = "so you like it"
+    else:
+        lol = "so you don't like it"
+    return render(request, "home.html", {'titles': titles, "lol":lol})

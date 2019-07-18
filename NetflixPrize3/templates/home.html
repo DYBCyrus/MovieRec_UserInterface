@@ -99,5 +99,25 @@
         </div>
 
         {% endif %}
+
+        <form method="post" action="/feedback" id="feedbackForm">
+            {% csrf_token %}
+            <span>You</span>
+            <label for="like">like: </label>
+            <input name="likeChoice" id="like" type="radio" value="like">
+
+            <label for"dislike">dislike: </label>
+            <input name="likeChoice" id="dislike" type="radio" value="dislike">
+            <span> this movie because </span>
+
+        </form>
+
+        <button type="submit" form="feedbackForm" value="Submit">GOOOODO</button>
+
+        {% if lol is not None %}
+        <span>
+            {{lol}}
+        </span>
+        {% endif %}
     </body>
 </html>
