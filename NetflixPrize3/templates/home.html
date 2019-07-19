@@ -27,6 +27,7 @@
         </script>
 
         <script type="text/javascript">
+            if(ge){
             var ge = {{ genres|safe }};
             $(function() {
                 $("#genre").autocomplete({
@@ -38,6 +39,7 @@
                     },
                 });
             });
+            }
         </script>
 
         <!-- The following script is for submitting a title -->
@@ -109,6 +111,23 @@
             <label for"dislike">dislike: </label>
             <input name="likeChoice" id="dislike" type="radio" value="dislike">
             <span> this movie because </span>
+
+            <div id="directors">
+            </div>
+            {% if movieData is not None %}
+            <script type="text/javascript">
+                var dir = {{ movieData | safe }}.directors_names;
+                alert(dir[0])
+                var i;
+                var text = ""
+                for(i = 0; i < dir.length; i++){
+                    text = text + dir[i];
+                    text = text + "<input type=\"checkbox\" name=\"dir"
+                    text = text + i + " value=\"d_" + dir[i] + "\"><br>"
+                }
+                document.getElementById("directors").innerHTML = text;
+            </script>
+            {% endif %}
 
         </form>
 

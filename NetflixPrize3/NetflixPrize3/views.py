@@ -14,10 +14,12 @@ titles = []
 def button(request):
     # print(os.getcwd())
     global df
+    global titles
+    if len(titles) > 0:
+        return render(request, 'home.html', {'titles':titles})
     df = pd.read_csv('IMDB_Final_Movies.csv', delimiter=',')
     title = df['primaryTitle'].tolist()
     year = df['startYear'].tolist()
-    global titles
     for (i,j) in zip(title,year):
         if not np.isnan(j):
             titles.append(i + '(' + str(int(j)) + ')')
