@@ -26,19 +26,17 @@
             });
         </script>
 
-        <script type="text/javascript">
-            if(ge){
-            var ge = {{ genres|safe }};
-            $(function() {
-                $("#genre").autocomplete({
-                    source: ge,
-                    minLength: 0,
-                    autoFocus: true,
-                    classes: {
-                        "ui-autocomplete": "highlight"
-                    },
-                });
-            });
+        <script>
+            function feature_box(key,div_id) {
+                var dir = {{ movieData | safe }}[key];
+                var i;
+                var text = document.getElementById(div_id).innerHTML
+                for(i = 0; i < dir.length; i++){
+                    text = text + dir[i];
+                    text = text + "<input type=\"checkbox\" name=\"dir"
+                    text = text + i + " value=\"d_" + dir[i] + "\"><br>"
+                }
+                document.getElementById(div_id).innerHTML = text;
             }
         </script>
 
@@ -76,28 +74,12 @@
             </form>
         </div>
 
-        <div class="ui-widget">
-            <label for="genre"> Genre(Press 'Enter' to select) </label>
-            <form method="post">
-                {% csrf_token %}
-                <input type="text" id="genre" name="genre">
-            </form>
-        </div>
-
         <!-- <div id="features">
         </div> -->
         {% if titleInvalid is not None %}
 
         <div>
             Title Invalid!
-        </div>
-
-        {% endif %}
-
-        {% if movieData is not None %}
-
-        <div>
-            {{movieData}}
         </div>
 
         {% endif %}
@@ -113,19 +95,22 @@
             <span> this movie because </span>
 
             <div id="directors">
+                <h3>Director</h3>
             </div>
+
+            <div id="writers">
+                <h3>Writer</h3>
+            </div>
+
+            <div id="casts">
+                <h3>Cast</h3>
+            </div>
+
             {% if movieData is not None %}
             <script type="text/javascript">
-                var dir = {{ movieData | safe }}.directors_names;
-                alert(dir[0])
-                var i;
-                var text = ""
-                for(i = 0; i < dir.length; i++){
-                    text = text + dir[i];
-                    text = text + "<input type=\"checkbox\" name=\"dir"
-                    text = text + i + " value=\"d_" + dir[i] + "\"><br>"
-                }
-                document.getElementById("directors").innerHTML = text;
+                feature_box("directors_names","directors");
+                feature_box("writers_names","writers");
+                feature_box("cast_name","casts");
             </script>
             {% endif %}
 
