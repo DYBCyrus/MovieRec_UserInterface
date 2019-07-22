@@ -6,11 +6,26 @@
     <head>
         <style>
             .ui-autocomplete { height: 200px; width: 300px; overflow-y: scroll; overflow-x: scroll; }
-            input { width: 300px; }
+            #title { width: 300px; }
+            .container { border:2px solid #ccc; width:400px; height: 200px; overflow-y: scroll; overflow-x: scroll; }
+            .box { 
+                display: grid; 
+                height: 200px;
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: 100px;
+                column-gap: 20px;
+            }
+            .box1 { 
+                display: grid; 
+                height: 50px;
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: 100px;
+                column-gap: 20px;
+            }
         </style>
         <meta charset="utf-8">
         <title>NetflixPrize3!</title>
-
+        
         <!-- The following script defines parameters for the autocomplete -->
         <script type="text/javascript">
             var arr = {{ titles|safe }};
@@ -27,15 +42,28 @@
         </script>
 
         <script>
+            function movie_link() {
+                var t = {{ movieData | safe }}["tconst"]
+                text = "<a href=\"https://www.imdb.com/title/" + t + 
+                        "\" target=\"_blank\">Details of recommended movie</a>";
+                document.getElementById("link").innerHTML = text;
+            }
             function feature_box(key,div_id) {
                 var dir = {{ movieData | safe }}[key];
                 var i;
-                var text = document.getElementById(div_id).innerHTML
+                var text = document.getElementById(div_id).innerHTML;
                 for(i = 0; i < dir.length; i++){
-                    text = text + dir[i];
-                    text = text + "<input type=\"checkbox\" name=\"dir"
-                    text = text + i + " value=\"d_" + dir[i] + "\"><br>"
+                    text = text + "<input type=\"checkbox\" name=\"dir";
+                    text = text + i + " value=\"d_" + dir[i] + "\">" + dir[i] + "<br>";
                 }
+                document.getElementById(div_id).innerHTML = text;
+            }
+            function feature_boolean(div_id) {
+                var text = document.getElementById(div_id).innerHTML
+                text = text + "<input type=\"radio\" name=\"" + div_id + 
+                        "onclick=\"onlyOne(div_id,this)\"" + " value=\"yes" + "\">Yes<br>"
+                text = text + "<input type=\"radio\" name=\"" + div_id + 
+                        "onclick=\"onlyOne(div_id,this)\"" + " value=\"no" + "\">No<br>"
                 document.getElementById(div_id).innerHTML = text;
             }
         </script>
@@ -84,26 +112,39 @@
 
         {% endif %}
 
+        <h3 id="link"></h3>
+
         <form method="post" action="/feedback" id="feedbackForm">
             {% csrf_token %}
-            <span>You</span>
-            <label for="like">like: </label>
+            <span>Would you like to watch this movie? </span>
+            <label for="like">Yes: </label>
             <input name="likeChoice" id="like" type="radio" value="like">
 
-            <label for"dislike">dislike: </label>
+            <label for"dislike">Not likely: </label>
             <input name="likeChoice" id="dislike" type="radio" value="dislike">
-            <span> this movie because </span>
 
-            <div id="directors">
-                <h3>Director</h3>
+            <div class="box1">
+                <h3>Because Director(s)</h3>
+                <h3>Because Writer(s)</h3>
+                <h3>Because Cast(s)</h3>
             </div>
 
-            <div id="writers">
-                <h3>Writer</h3>
+            <div class="box">
+                <div id="directors" class="container"></div>
+                <div id="writers" class="container"></div>
+                <div id="casts" class="container"></div>
             </div>
 
-            <div id="casts">
-                <h3>Cast</h3>
+            <div class="box1">
+                <h3>Because Genre(s)</h3>
+                <h3>Because the level of Rating affects</h3>
+                <h3>Because the Year affects</h3>
+            </div>
+
+            <div class="box">
+                <div id="genres" class="container"></div>
+                <div id="rating" class="container"></div>
+                <div id="year" class="container"></div>
             </div>
 
             {% if movieData is not None %}
@@ -111,6 +152,10 @@
                 feature_box("directors_names","directors");
                 feature_box("writers_names","writers");
                 feature_box("cast_name","casts");
+                feature_box("genres","genres");
+                feature_boolean("rating");
+                feature_boolean("year");
+                movie_link();
             </script>
             {% endif %}
 

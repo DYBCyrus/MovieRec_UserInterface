@@ -52,8 +52,7 @@ def fetchFeatures(request):
     movieEntry["directors_names"] = movieEntry["directors_names"].split('/')
     movieEntry["writers_names"] = movieEntry["writers_names"].split('/')
     movieEntry["cast_name"] = movieEntry["cast_name"].split('/')
-
-    # return JsonResponse({"directors":directors})
+    movieEntry["genres"] = movieEntry["genres"].split(',')
 
     return render(request, "home.html", {'titles': titles, "movieData":movieEntry})
 
