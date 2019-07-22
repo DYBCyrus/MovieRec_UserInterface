@@ -114,7 +114,8 @@
 
         <h3 id="link"></h3>
 
-        <form method="post" action="/feedback" id="feedbackForm">
+        {% if movieData is not None %}
+            <form method="post" action="/feedback" id="feedbackForm">
             {% csrf_token %}
             <span>Would you like to watch this movie? </span>
             <label for="like">Yes: </label>
@@ -146,8 +147,6 @@
                 <div id="rating" class="container"></div>
                 <div id="year" class="container"></div>
             </div>
-
-            {% if movieData is not None %}
             <script type="text/javascript">
                 feature_box("directors_names","directors");
                 feature_box("writers_names","writers");
@@ -157,7 +156,7 @@
                 feature_boolean("year");
                 movie_link();
             </script>
-            {% endif %}
+        {% endif %}
 
         </form>
 
