@@ -95,14 +95,14 @@
     </head>
     <body>
         <h1><center>Welcome to NetflixPrize3!</center></h1>
-        <div class="ui-widget">
+        {% comment %} <div class="ui-widget">
             <label for="search"> Search(Press 'Enter' to search) </label>
             <!-- onsubmit="return post();"  -->
             <form method="post" action="/fetchFeatures">
                 {% csrf_token %}
                 <input type="text" id="title" name="title">
             </form>
-        </div>
+        </div> {% endcomment %}
 
         <!-- <div id="features">
         </div> -->
@@ -114,6 +114,7 @@
 
         {% endif %}
 
+        <h2 id="m_name"></h2>
         <h3 id="link"></h3>
 
         {% if movieData is not None %}
@@ -157,6 +158,7 @@
                 feature_boolean("rating");
                 feature_boolean("year");
                 movie_link();
+                document.getElementById("m_name").innerHTML = {{movieData|safe}}["primaryTitle"]
             </script>
         {% endif %}
 

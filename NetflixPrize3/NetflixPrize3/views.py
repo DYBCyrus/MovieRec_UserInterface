@@ -10,38 +10,45 @@ import json
 
 df = pd.DataFrame()
 titles = []
+sorted_titles = []
 
 def button(request):
     # print(os.getcwd())
     global df
-    global titles
+    global titles, sorted_titles
     if len(titles) > 0:
-        return render(request, 'home.html', {'titles':titles})
+        movieEntry = fetchFeatures()
+        return render(request, 'home.html', {'titles':titles, 'movieData': movieEntry})
     df = pd.read_csv('IMDB_Final_Movies.csv', delimiter=',')
     title = df['primaryTitle'].tolist()
     year = df['startYear'].tolist()
+    sorted_titles = json.load(open("sorted_movies_for_genres.json"))
     for (i,j) in zip(title,year):
         if not np.isnan(j):
             titles.append(i + '(' + str(int(j)) + ')')
         else:
             titles.append(i + '(N/A)')
-    return render(request, 'home.html', {'titles': titles})
+    movieEntry = fetchFeatures()
+    return render(request, 'home.html', {'titles': titles, 'movieData': movieEntry})
 
-def fetchFeatures(request):
+def fetchFeatures():
     global df
-    global titles
-    longTitle = request.POST.get('title', False)
+    global titles, sorted_titles
+    # longTitle = request.POST.get('title', False)
+    gen = random.sample(sorted_titles.keys(),1)[0]
+    rand_sample = random.sample(sorted_titles[gen][:100],1)
+    longTitle = rand_sample[0][0] + "(" + rand_sample[0][1] + ")"
     title = ""
     year = 0
     if longTitle:
         title = longTitle.split('(')
         ti = title[0]
-        if (df.query('primaryTitle == "%s"' % (ti))).empty:
-            return render(request, "home.html", {'titles': titles, "titleInvalid":True})
+        # if (df.query('primaryTitle == "%s"' % (ti))).empty:
+        #     return render(request, "home.html", {'titles': titles, "titleInvalid":True})
         if '(N/A)' not in longTitle:
             year = int(title[1].split(')')[0])
-    else:
-        return render(request, "home.html", {'titles': titles, "titleInvalid":True})
+    # else:
+    #     return render(request, "home.html", {'titles': titles, "titleInvalid":True})
     if year != 0:
         # Search the movie entry using the title and the startYear
         movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (ti, year)).\
@@ -54,7 +61,7 @@ def fetchFeatures(request):
     movieEntry["cast_name"] = movieEntry["cast_name"].split('/')
     movieEntry["genres"] = movieEntry["genres"].split(',')
 
-    return render(request, "home.html", {'titles': titles, "movieData":movieEntry})
+    return movieEntry
 
 def feedback(request):
     global titles
@@ -73,4 +80,5 @@ def feedback(request):
     print(request.POST.get("year"))
     print(request.POST.get("rating"))
 
-    return render(request, "home.html", {'titles': titles, "lol":lol})
+    movieEntry = fetchFeatures()
+    return render(request, "home.html", {'titles': titles, "lol": lol, "movieData": movieEntry})
