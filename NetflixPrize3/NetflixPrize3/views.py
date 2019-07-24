@@ -65,4 +65,12 @@ def feedback(request):
         lol = "so you like it"
     else:
         lol = "so you don't like it"
+    # print(request.POST.get("genres", "N/A")[1])
+    feat_list = ["directors_names", "writers_names", "cast_name", "genres"]
+    for feat in feat_list:
+        temp = request.POST.getlist(feat, "N/A")
+        print(" ".join(temp) if temp != "N/A" else "N/A")
+    print(request.POST.get("year"))
+    print(request.POST.get("rating"))
+
     return render(request, "home.html", {'titles': titles, "lol":lol})

@@ -8,15 +8,15 @@
             .ui-autocomplete { height: 200px; width: 300px; overflow-y: scroll; overflow-x: scroll; }
             #title { width: 300px; }
             .container { border:2px solid #ccc; width:400px; height: 200px; overflow-y: scroll; overflow-x: scroll; }
-            .box { 
-                display: grid; 
+            .box {
+                display: grid;
                 height: 200px;
                 grid-template-columns: repeat(3, 1fr);
                 grid-template-rows: 100px;
                 column-gap: 20px;
             }
-            .box1 { 
-                display: grid; 
+            .box1 {
+                display: grid;
                 height: 50px;
                 grid-template-columns: repeat(3, 1fr);
                 grid-template-rows: 100px;
@@ -25,7 +25,7 @@
         </style>
         <meta charset="utf-8">
         <title>NetflixPrize3!</title>
-        
+
         <!-- The following script defines parameters for the autocomplete -->
         <script type="text/javascript">
             var arr = {{ titles|safe }};
@@ -44,26 +44,28 @@
         <script>
             function movie_link() {
                 var t = {{ movieData | safe }}["tconst"]
-                text = "<a href=\"https://www.imdb.com/title/" + t + 
+                text = "<a href=\"https://www.imdb.com/title/" + t +
                         "\" target=\"_blank\">Details of recommended movie</a>";
                 document.getElementById("link").innerHTML = text;
             }
             function feature_box(key,div_id) {
-                var dir = {{ movieData | safe }}[key];
+                var feat = {{ movieData | safe }}[key];
                 var i;
                 var text = document.getElementById(div_id).innerHTML;
-                for(i = 0; i < dir.length; i++){
-                    text = text + "<input type=\"checkbox\" name=\"dir";
-                    text = text + i + " value=\"d_" + dir[i] + "\">" + dir[i] + "<br>";
+                for(i = 0; i < feat.length; i++){
+                    text = text + "<input type=\"checkbox\" name=\"" + key
+                            + "\" value=\"" + key.charAt(0)
+                            + "_" + feat[i] + "\">" + feat[i] + "<br>";
                 }
                 document.getElementById(div_id).innerHTML = text;
             }
             function feature_boolean(div_id) {
                 var text = document.getElementById(div_id).innerHTML
-                text = text + "<input type=\"radio\" name=\"" + div_id + 
-                        "onclick=\"onlyOne(div_id,this)\"" + " value=\"yes" + "\">Yes<br>"
-                text = text + "<input type=\"radio\" name=\"" + div_id + 
-                        "onclick=\"onlyOne(div_id,this)\"" + " value=\"no" + "\">No<br>"
+                fieldName = div_id == "year" ? "startYear" : "averageRating";
+                text = text + "<input type=\"radio\" name=\"" + div_id + "\" value="
+                 + {{ movieData | safe }}[fieldName] + ">Yes<br>"
+                text = text + "<input type=\"radio\" name=\"" + div_id +
+                        "\" value=\"no" + "\">No<br>"
                 document.getElementById(div_id).innerHTML = text;
             }
         </script>
@@ -138,7 +140,7 @@
 
             <div class="box1">
                 <h3>Because Genre(s)</h3>
-                <h3>Because the level of Rating affects</h3>
+                <h3>Because the Rating affects</h3>
                 <h3>Because the Year affects</h3>
             </div>
 
