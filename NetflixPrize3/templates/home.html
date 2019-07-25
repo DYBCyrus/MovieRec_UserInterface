@@ -158,7 +158,8 @@
                 feature_boolean("rating");
                 feature_boolean("year");
                 movie_link();
-                document.getElementById("m_name").innerHTML = {{movieData|safe}}["primaryTitle"]
+                document.getElementById("m_name").innerHTML = "Title of recommended movie: " + 
+                                                                {{movieData|safe}}["primaryTitle"];
             </script>
         {% endif %}
 

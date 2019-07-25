@@ -24,10 +24,7 @@ def button(request):
     year = df['startYear'].tolist()
     sorted_titles = json.load(open("sorted_movies_for_genres.json"))
     for (i,j) in zip(title,year):
-        if not np.isnan(j):
-            titles.append(i + '(' + str(int(j)) + ')')
-        else:
-            titles.append(i + '(N/A)')
+        titles.append(i + '(' + str(int(j)) + ')')
     movieEntry = fetchFeatures()
     return render(request, 'home.html', {'titles': titles, 'movieData': movieEntry})
 
@@ -39,22 +36,17 @@ def fetchFeatures():
     rand_sample = random.sample(sorted_titles[gen][:100],1)
     longTitle = rand_sample[0][0] + "(" + rand_sample[0][1] + ")"
     title = ""
-    year = 0
     if longTitle:
         title = longTitle.split('(')
         ti = title[0]
         # if (df.query('primaryTitle == "%s"' % (ti))).empty:
         #     return render(request, "home.html", {'titles': titles, "titleInvalid":True})
-        if '(N/A)' not in longTitle:
-            year = int(title[1].split(')')[0])
+        year = int(title[1].split(')')[0])
     # else:
     #     return render(request, "home.html", {'titles': titles, "titleInvalid":True})
-    if year != 0:
         # Search the movie entry using the title and the startYear
-        movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (ti, year)).\
-                        iloc[0].to_dict()
-    else:
-        movieEntry = df.query('primaryTitle == "%s"' % (ti)).iloc[0].to_dict()
+    movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (ti, year)).\
+                    iloc[0].to_dict()
 
     movieEntry["directors_names"] = movieEntry["directors_names"].split('/')
     movieEntry["writers_names"] = movieEntry["writers_names"].split('/')
