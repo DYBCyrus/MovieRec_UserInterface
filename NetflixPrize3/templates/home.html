@@ -63,7 +63,7 @@
                 var text = document.getElementById(div_id).innerHTML
                 fieldName = div_id == "year" ? "startYear" : "averageRating";
                 text = text + "<input type=\"radio\" name=\"" + div_id + "\" value="
-                 + {{ movieData | safe }}[fieldName] + ">Yes<br>"
+                 + {{ movieData | safe }}[fieldName] + " checked" + ">Yes<br>"
                 text = text + "<input type=\"radio\" name=\"" + div_id +
                         "\" value=\"no" + "\">No<br>"
                 document.getElementById(div_id).innerHTML = text;
@@ -122,7 +122,7 @@
             {% csrf_token %}
             <span>Would you like to watch this movie? </span>
             <label for="like">Yes: </label>
-            <input name="likeChoice" id="like" type="radio" value="like">
+            <input name="likeChoice" id="like" type="radio" value="like" required>
 
             <label for"dislike">Not likely: </label>
             <input name="likeChoice" id="dislike" type="radio" value="dislike">
