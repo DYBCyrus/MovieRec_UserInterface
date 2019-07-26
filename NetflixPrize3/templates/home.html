@@ -158,8 +158,8 @@
                 feature_boolean("rating");
                 feature_boolean("year");
                 movie_link();
-                document.getElementById("m_name").innerHTML = "Title of recommended movie: " + 
-                                                                {{movieData|safe}}["primaryTitle"];
+                document.getElementById("m_name").innerHTML =
+                    "Title of recommended movie: " + {{movieData|safe}}["primaryTitle"];
             </script>
         {% endif %}
 
@@ -167,10 +167,5 @@
 
         <button type="submit" form="feedbackForm" value="Submit">GOOOODO</button>
 
-        {% if lol is not None %}
-        <span>
-            {{lol}}
-        </span>
-        {% endif %}
     </body>
 </html>
