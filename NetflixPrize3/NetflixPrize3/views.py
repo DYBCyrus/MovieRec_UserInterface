@@ -61,11 +61,6 @@ def fetchFeatures():
 def feedback(request):
     global df, titles
     likeChoice = request.POST.get('likeChoice', False)
-    lol = ""
-    if likeChoice == "like":
-        lol = "so you like it"
-    else:
-        lol = "so you don't like it"
     # print(request.POST.get("genres", "N/A")[1])
     feat_list = ["directors_names", "writers_names", "cast_name", "genres"]
     for feat in feat_list:
@@ -75,7 +70,7 @@ def feedback(request):
     print(request.POST.get("rating"))
 
     movieEntry = fetchFeatures()
-    return render(request, "home.html", {'titles': titles, "lol": lol, "movieData": movieEntry})
+    return render(request, "home.html", {'titles': titles, "movieData": movieEntry})
 
 
 """
@@ -94,13 +89,13 @@ col = {'tconst':0,
     'cast_name':9,
     'averageRating':10,
     'numVotes':11}
-    
+
 def get_column(matrix, i):
     return [row[i] for row in matrix]
 
 def features_construction():
     if not os.path.exists("feat_to_index.json"):
-        # read data 
+        # read data
         df1 = pd.read_csv('IMDB_Final_Movies.csv')
         # data in numpy
         data = df1.values
@@ -120,7 +115,7 @@ def features_construction():
         pickle.dump(onehot_feat_to_index,f)
         f.close()
     else:
-        onehot_feat_to_index = pickle.load(open("feat_to_index.json","rb"))    
+        onehot_feat_to_index = pickle.load(open("feat_to_index.json","rb"))
     return onehot_feat_to_index
 
 def convert_to_feat(movie_entry):
