@@ -167,5 +167,10 @@
 
         <button type="submit" form="feedbackForm" value="Submit">GOOOODO</button>
 
+        {% if explanation is not None %}
+            <h4>Explanation:<br><pre>{{explanation}}</pre></h4>
+            <h4>Tree Structure:<br><pre>{{tree_structure}}</pre></h4>
+        {% endif %}
+
     </body>
 </html>

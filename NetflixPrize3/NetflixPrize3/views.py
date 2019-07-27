@@ -93,11 +93,15 @@ def feedback(request):
     user_feat = convert_to_feat(user_movie_entry)
     current_user_feat_X.append(user_feat)
     current_user_feat_Y.append(likeChoice == "like")
+
+    ex = None
+    tree = None
     if len(current_user_feat_X) > 4:
-        train(np.array(current_user_feat_X),np.array(current_user_feat_Y))
+        ex, tree = train(np.array(current_user_feat_X),np.array(current_user_feat_Y))
 
     movieEntry = fetchFeatures()
-    return render(request, "home.html", {'titles': titles, "movieData": movieEntry})
+    return render(request, "home.html", {'titles': titles, "movieData": movieEntry,\
+        "explanation": ex, "tree_structure": tree})
 
 
 """
@@ -206,14 +210,45 @@ def convert_to_feat(movie_entry):
     return feat
 
 def train(X,Y):
-    global onehot_index_to_feat
+    global onehot_index_to_feat, movies_feat, index_to_movie_title_year
     X = lil_matrix(X)
     clf = DecisionTreeClassifier()
     clf.fit(X,Y)
 
-    for i,d in enumerate(clf.feature_importances_):
-        if d != 0:
-            print(onehot_index_to_feat[i], d)
+    preds = clf.predict_proba(movies_feat)
+    recommended_movie = np.argmax(preds[:,1])
+    print(index_to_movie_title_year[recommended_movie])
 
-    r = export_text(clf, feature_names=list(onehot_index_to_feat.values()))
-    print(r)
+    # referrence: https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html#sphx-glr-auto-examples-tree-plot-unveil-tree-structure-py
+    feature = clf.tree_.feature
+    threshold = clf.tree_.threshold
+    d_path = clf.decision_path(movies_feat[recommended_movie])
+    leave_id = clf.apply(movies_feat[recommended_movie])
+
+    sample_id = 0
+    node_index = d_path.indices[d_path.indptr[sample_id]:
+                                        d_path.indptr[sample_id + 1]]
+
+    explanation = ""
+    for node_id in node_index:
+        if leave_id[sample_id] == node_id:
+            continue
+
+        if (movies_feat[recommended_movie][sample_id, feature[node_id]] <= threshold[node_id]):
+            threshold_sign = "<="
+        else:
+            threshold_sign = ">"
+
+        explanation += "decision id node {} : ({} (= {}) {} {})".format(
+                        node_id,
+                        onehot_index_to_feat[feature[node_id]],
+                        movies_feat[recommended_movie][sample_id, feature[node_id]],
+                        threshold_sign,
+                        threshold[node_id]) + '\n'
+
+    # for i,d in enumerate(clf.feature_importances_):
+    #     if d != 0:
+    #         print(onehot_index_to_feat[i], d)
+
+    tree_structure = export_text(clf, feature_names=list(onehot_index_to_feat.values()))
+    return explanation, tree_structure
