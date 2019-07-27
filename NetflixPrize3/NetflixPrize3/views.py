@@ -9,6 +9,9 @@ import os
 import json
 import pickle
 from collections import defaultdict
+from sklearn.tree import DecisionTreeClassifier
+from scipy.sparse import lil_matrix
+from sklearn.tree.export import export_text
 
 df = pd.DataFrame()
 titles = []
@@ -16,13 +19,18 @@ sorted_titles = []
 onehot_feat_to_index = {}
 onehot_index_to_feat = {}
 seen_movies = ["dummy"]
+# movies that user has chosen
 current_user_feat_X = []
 current_user_feat_Y = []
+# all movies feature vector
+movies_feat = lil_matrix(0)
+# index to movie title + year
+index_to_movie_title_year = {}
 
 def button(request):
     # print(os.getcwd())
-    global df, titles, sorted_titles, onehot_feat_to_index, onehot_index_to_feat
-    onehot_feat_to_index, onehot_index_to_feat = features_construction()
+    global df, titles, sorted_titles, onehot_feat_to_index, onehot_index_to_feat, index_to_movie_title_year
+    onehot_feat_to_index, onehot_index_to_feat, index_to_movie_title_year = features_construction()
     if len(titles) > 0:
         movieEntry = fetchFeatures()
         return render(request, 'home.html', {'titles':titles, 'movieData': movieEntry})
@@ -113,11 +121,12 @@ def get_column(matrix, i):
     return [row[i] for row in matrix]
 
 def features_construction():
+    global movies_feat, col
+    # read data
+    df1 = pd.read_csv('IMDB_Final_Movies.csv')
+    # data in numpy
+    data = df1.values
     if not os.path.exists("feat_to_index.pkl") or not os.path.exists("index_to_feat.pkl"):
-        # read data
-        df1 = pd.read_csv('IMDB_Final_Movies.csv')
-        # data in numpy
-        data = df1.values
         # create list for one hot encoding
         cast_list = list(set(["c_" + j for i in [x.split('/') for x in get_column(data,col["cast_name"])] for j in i]))
         director_list = list(set(["d_" + j for i in [str(x).split('/') for x in get_column(data,col["directors_name"])] for j in i]))
@@ -141,7 +150,38 @@ def features_construction():
     else:
         onehot_feat_to_index = pickle.load(open("feat_to_index.pkl","rb"))
         onehot_index_to_feat = pickle.load(open("index_to_feat.pkl","rb"))
-    return onehot_feat_to_index, onehot_index_to_feat
+
+    index_to_movie = {}
+
+    if movies_feat.shape == (1,1):
+        movies_feat = lil_matrix((len(data),len(onehot_feat_to_index)))
+        for i in range(len(data)):
+            m = data[i]
+            index_to_movie[i] = m[col['primaryTitle']] + '(' + str(int(m[col['startYear']])) + ')'
+            # cast    
+            for c in str(m[col["cast_name"]]).split("/"):
+                movies_feat[i,onehot_feat_to_index["c_"+c]] = 1
+            # director
+            for d in str(m[col["directors_name"]]).split("/"):
+                movies_feat[i,onehot_feat_to_index["d_"+d]] = 1
+            # writer
+            for w in str(m[col["writers_name"]]).split("/"):
+                movies_feat[i,onehot_feat_to_index["w_"+w]] = 1
+            # genre
+            for g in str(m[col["genres"]]).split(","):
+                movies_feat[i,onehot_feat_to_index["g_"+g]] = 1
+            # year
+            decade = int(m[col["startYear"]]/10) * 10
+            movies_feat[i,onehot_feat_to_index[decade]] = 1
+
+    if not os.path.exists("index_to_movie.pkl"):
+        f = open("index_to_movie.pkl","wb")
+        pickle.dump(index_to_movie,f)
+        f.close()
+    else:
+        index_to_movie = pickle.load(open("index_to_movie.pkl","rb"))
+
+    return onehot_feat_to_index, onehot_index_to_feat, index_to_movie
 
 def convert_to_feat(movie_entry):
     global onehot_feat_to_index
@@ -167,13 +207,13 @@ def convert_to_feat(movie_entry):
 
 def train(X,Y):
     global onehot_index_to_feat
-    from sklearn.tree import DecisionTreeClassifier
-    from scipy.sparse import lil_matrix
-    print(X.shape[1])
     X = lil_matrix(X)
     clf = DecisionTreeClassifier()
     clf.fit(X,Y)
-    print(len(clf.feature_importances_))
+
     for i,d in enumerate(clf.feature_importances_):
         if d != 0:
             print(onehot_index_to_feat[i], d)
+
+    r = export_text(clf, feature_names=list(onehot_index_to_feat.values()))
+    print(r)
