@@ -162,7 +162,7 @@ def features_construction():
         for i in range(len(data)):
             m = data[i]
             index_to_movie[i] = m[col['primaryTitle']] + '(' + str(int(m[col['startYear']])) + ')'
-            # cast    
+            # cast
             for c in str(m[col["cast_name"]]).split("/"):
                 movies_feat[i,onehot_feat_to_index["c_"+c]] = 1
             # director
@@ -217,6 +217,9 @@ def train(X,Y):
 
     preds = clf.predict_proba(movies_feat)
     recommended_movie = np.argmax(preds[:,1])
+    print(preds[0,0:10])
+    print(preds[1,0:10])
+    # print(index_to_movie_title_year)
     print(index_to_movie_title_year[recommended_movie])
 
     # referrence: https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html#sphx-glr-auto-examples-tree-plot-unveil-tree-structure-py

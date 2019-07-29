@@ -161,12 +161,12 @@
                 document.getElementById("m_name").innerHTML =
                     "Title of recommended movie: " + {{movieData|safe}}["primaryTitle"];
             </script>
+            </form>
         {% endif %}
 
-        </form>
 
-        <button type="submit" form="feedbackForm" value="Submit">GOOOODO</button>
-
+        <button type="submit" name="fetch" form="feedbackForm" value="Random">Random</button>
+        <button type="submit" name="fetch" form="feedbackForm" value="Recommend">Recommend</button>
         {% if explanation is not None %}
             <h4>Explanation:<br><pre>{{explanation}}</pre></h4>
             <h4>Tree Structure:<br><pre>{{tree_structure}}</pre></h4>
