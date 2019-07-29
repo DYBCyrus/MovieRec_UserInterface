@@ -8,7 +8,10 @@ import pandas as pd
 import os
 import json
 import pickle
+import lime
+import lime.lime_tabular
 from collections import defaultdict
+from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from scipy.sparse import lil_matrix
 from sklearn.tree.export import export_text
@@ -43,9 +46,8 @@ def button(request):
     movieEntry = fetchFeatures()
     return render(request, 'home.html', {'titles': titles, 'movieData': movieEntry})
 
-def fetchFeatures():
+def fetchFeatures(longTitle="dummy"):
     global df, titles, sorted_titles, seen_movies
-    longTitle = "dummy"
     while longTitle in seen_movies:
         # longTitle = request.POST.get('title', False)
         gen = random.sample(sorted_titles.keys(),1)[0]
@@ -96,10 +98,14 @@ def feedback(request):
 
     ex = None
     tree = None
+    recommended = None
     if len(current_user_feat_X) > 4:
-        ex, tree = train(np.array(current_user_feat_X),np.array(current_user_feat_Y))
+        ex, tree, recommended = train(np.array(current_user_feat_X),np.array(current_user_feat_Y))
 
-    movieEntry = fetchFeatures()
+    if request.POST.get('fetch', 'Random') == 'Recommend' and recommended:
+        movieEntry = fetchFeatures(recommended)
+    else:
+        movieEntry = fetchFeatures()
     return render(request, "home.html", {'titles': titles, "movieData": movieEntry,\
         "explanation": ex, "tree_structure": tree})
 
@@ -217,6 +223,15 @@ def train(X,Y):
 
     preds = clf.predict_proba(movies_feat)
     recommended_movie = np.argmax(preds[:,1])
+    #
+    # logClf = LogisticRegression(random_state = 0, max_iter=100, n_jobs=4, solver='saga', multi_class ='ovr', penalty='l1').fit(X, Y)
+    #
+    # logPreds = logClf.predict_proba(movies_feat)
+    # # dtype = [('false', float),('true', float)]
+    # # log_recom_movie = np.sort(logPreds, order)
+    # log_recommended_movie = np.argmax(logPreds[:,1])
+
+
     print(preds[0,0:10])
     print(preds[1,0:10])
     # print(index_to_movie_title_year)
@@ -254,4 +269,4 @@ def train(X,Y):
     #         print(onehot_index_to_feat[i], d)
 
     tree_structure = export_text(clf, feature_names=list(onehot_index_to_feat.values()))
-    return explanation, tree_structure
+    return explanation, tree_structure, index_to_movie_title_year[recommended_movie]
