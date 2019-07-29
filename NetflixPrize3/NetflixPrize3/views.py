@@ -91,6 +91,8 @@ def feedback(request):
     print(request.POST.get("year"))
     user_movie_entry["rating"] = [request.POST.get("rating")]
     print(request.POST.get("rating"))
+    user_movie_entry["numVotes"] = [request.POST.get("numVotes")]
+    print(request.POST.get("numVotes"))
 
     user_feat = convert_to_feat(user_movie_entry)
     current_user_feat_X.append(user_feat)
@@ -145,7 +147,8 @@ def features_construction():
         year_list = list(np.arange(1890,2020,10))
 
         # create list for one hot encoding
-        onehot_list = list(set(cast_list + director_list + writers_list + genre_list + year_list))
+        onehot_list = list(set(cast_list + director_list + writers_list + genre_list + year_list)) \
+            + ["rating"] + ["numVotes"]
         onehot_indices = list(np.arange(0,len(onehot_list),1))
         onehot_feat_to_index = dict(zip(onehot_list,onehot_indices))
         onehot_index_to_feat = dict(zip(onehot_indices,onehot_list))
@@ -183,6 +186,10 @@ def features_construction():
             # year
             decade = int(m[col["startYear"]]/10) * 10
             movies_feat[i,onehot_feat_to_index[decade]] = 1
+            # rating
+            movies_feat[i,len(onehot_feat_to_index)-2] = m[col["averageRating"]]
+            # numVotes
+            movies_feat[i,len(onehot_feat_to_index)-1] = m[col["numVotes"]]
 
     if not os.path.exists("index_to_movie.pkl"):
         f = open("index_to_movie.pkl","wb")
@@ -194,7 +201,7 @@ def features_construction():
     return onehot_feat_to_index, onehot_index_to_feat, index_to_movie
 
 def convert_to_feat(movie_entry):
-    global onehot_feat_to_index
+    global onehot_feat_to_index, current_user_feat_X
     feat = np.zeros(len(onehot_feat_to_index))
     # cast
     for c in movie_entry["cast_name"]:
@@ -212,17 +219,32 @@ def convert_to_feat(movie_entry):
     if movie_entry["startYear"][0] != "no":
         decade = int(int(movie_entry["startYear"][0])/10) * 10
         feat[onehot_feat_to_index[decade]] = 1
+    # rating
+    if movie_entry["rating"][0] != "no":
+        feat[len(onehot_feat_to_index)-2] = float(movie_entry["rating"][0])
+    else:
+        feat[len(onehot_feat_to_index)-2] = np.mean(np.array(current_user_feat_X)\
+            [:,len(onehot_feat_to_index)-2])
+    # numVotes
+    if movie_entry["numVotes"][0] != "no":
+        feat[len(onehot_feat_to_index)-1] = float(movie_entry["numVotes"][0])
+    else:
+        feat[len(onehot_feat_to_index)-1] = np.mean(np.array(current_user_feat_X)\
+            [:,len(onehot_feat_to_index)-1])
 
     return feat
 
 def train(X,Y):
-    global onehot_index_to_feat, movies_feat, index_to_movie_title_year
+    global onehot_index_to_feat, movies_feat, index_to_movie_title_year, seen_movies
     X = lil_matrix(X)
     clf = DecisionTreeClassifier()
     clf.fit(X,Y)
 
     preds = clf.predict_proba(movies_feat)
-    recommended_movie = np.argmax(preds[:,1])
+    ascending_recommended_movie = np.argsort(preds[:,1])
+    for recommended_movie in ascending_recommended_movie[::-1]:
+        if index_to_movie_title_year[recommended_movie] not in seen_movies:
+            break
     #
     # logClf = LogisticRegression(random_state = 0, max_iter=100, n_jobs=4, solver='saga', multi_class ='ovr', penalty='l1').fit(X, Y)
     #
@@ -231,9 +253,6 @@ def train(X,Y):
     # # log_recom_movie = np.sort(logPreds, order)
     # log_recommended_movie = np.argmax(logPreds[:,1])
 
-
-    print(preds[0,0:10])
-    print(preds[1,0:10])
     # print(index_to_movie_title_year)
     print(index_to_movie_title_year[recommended_movie])
 
