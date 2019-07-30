@@ -8,15 +8,23 @@
         <style>
             .ui-autocomplete { height: 200px; width: 300px; overflow-y: scroll; overflow-x: scroll; }
             #title { width: 300px; }
-            .container { border:2px solid #ccc; width:400px; height: 200px; overflow-y: scroll; overflow-x: scroll; }
+            .container { border:2px solid #ccc; width:280px; height: 200px; overflow-y: scroll; overflow-x: scroll; }
+            .container_top { border:2px solid #ccc; width:400px; height: 200px; overflow-y: scroll; overflow-x: scroll; }
             .box {
                 display: grid;
                 height: 200px;
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(4, 1fr);
                 grid-template-rows: 100px;
                 column-gap: 20px;
             }
             .box1 {
+                display: grid;
+                height: 50px;
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: 100px;
+                column-gap: 20px;
+            }
+            .box1_top {
                 display: grid;
                 height: 50px;
                 grid-template-columns: repeat(3, 1fr);
@@ -62,7 +70,15 @@
             }
             function feature_boolean(div_id) {
                 var text = document.getElementById(div_id).innerHTML
-                fieldName = div_id == "year" ? "startYear" : "averageRating";
+                if(div_id == "year") {
+                    fieldName = "startYear"
+                }
+                else if(div_id == "rating") {
+                    fieldName = "averageRating"
+                }
+                else if(div_id == "numVotes") {
+                    fieldName = "numVotes"
+                }
                 text = text + "<input type=\"radio\" name=\"" + div_id + "\" value="
                  + {{ movieData | safe }}[fieldName] + " checked" + ">Yes<br>"
                 text = text + "<input type=\"radio\" name=\"" + div_id +
@@ -128,28 +144,30 @@
             <label for"dislike">Not likely: </label>
             <input name="likeChoice" id="dislike" type="radio" value="dislike">
 
-            <div class="box1">
+            <div class="box1_top">
                 <h3>Because Director(s)</h3>
                 <h3>Because Writer(s)</h3>
                 <h3>Because Cast(s)</h3>
             </div>
 
             <div class="box">
-                <div id="directors" class="container"></div>
-                <div id="writers" class="container"></div>
-                <div id="casts" class="container"></div>
+                <div id="directors" class="container_top"></div>
+                <div id="writers" class="container_top"></div>
+                <div id="casts" class="container_top"></div>
             </div>
 
             <div class="box1">
                 <h3>Because Genre(s)</h3>
                 <h3>Because the Rating affects</h3>
                 <h3>Because the Year affects</h3>
+                <h3>Because the Number of Votes affects</h3>
             </div>
 
             <div class="box">
                 <div id="genres" class="container"></div>
                 <div id="rating" class="container"></div>
                 <div id="year" class="container"></div>
+                <div id="numVotes" class="container"></div>
             </div>
             <script type="text/javascript">
                 feature_box("directors_names","directors");
@@ -158,6 +176,7 @@
                 feature_box("genres","genres");
                 feature_boolean("rating");
                 feature_boolean("year");
+                feature_boolean("numVotes");
                 movie_link();
                 document.getElementById("m_name").innerHTML =
                     "Title of recommended movie: " + {{movieData|safe}}["primaryTitle"];
