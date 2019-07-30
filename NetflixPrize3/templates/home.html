@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+    {% load static %}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
@@ -171,6 +172,15 @@
             <h4>Explanation:<br><pre>{{explanation}}</pre></h4>
             <h4>Tree Structure:<br><pre>{{tree_structure}}</pre></h4>
         {% endif %}
+
+        <!-- {% if lime %}
+        <div id="lime"></div>
+        <script>
+        $(function(){
+          $("#lime").load("{% static 'NetflixPrize3/lime.html' %}");
+        });
+        </script>
+        {% endif %} -->
 
     </body>
 </html>

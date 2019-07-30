@@ -8,8 +8,8 @@ import pandas as pd
 import os
 import json
 import pickle
-import lime
-import lime.lime_tabular
+# import lime
+# import lime.lime_tabular
 from collections import defaultdict
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -102,8 +102,10 @@ def feedback(request):
     if len(current_user_feat_X) > 4:
         ex, tree, recommended = train(np.array(current_user_feat_X),np.array(current_user_feat_Y))
 
+    # lime = False
     if request.POST.get('fetch', 'Random') == 'Recommend' and recommended:
         movieEntry = fetchFeatures(recommended)
+        # lime = True
     else:
         movieEntry = fetchFeatures()
     return render(request, "home.html", {'titles': titles, "movieData": movieEntry,\
@@ -216,6 +218,7 @@ def convert_to_feat(movie_entry):
     return feat
 
 def train(X,Y):
+    print("start training")
     global onehot_index_to_feat, movies_feat, index_to_movie_title_year
     X = lil_matrix(X)
     clf = DecisionTreeClassifier()
@@ -223,14 +226,27 @@ def train(X,Y):
 
     preds = clf.predict_proba(movies_feat)
     recommended_movie = np.argmax(preds[:,1])
-    #
-    # logClf = LogisticRegression(random_state = 0, max_iter=100, n_jobs=4, solver='saga', multi_class ='ovr', penalty='l1').fit(X, Y)
-    #
-    # logPreds = logClf.predict_proba(movies_feat)
-    # # dtype = [('false', float),('true', float)]
-    # # log_recom_movie = np.sort(logPreds, order)
-    # log_recommended_movie = np.argmax(logPreds[:,1])
 
+    print("Start training LogisticRegression")
+    logClf = LogisticRegression(random_state = 0, max_iter=100, n_jobs=4, solver='saga', multi_class ='ovr', penalty='l1').fit(X, Y)
+
+    logPreds = logClf.predict_proba(movies_feat)
+    # dtype = [('false', float),('true', float)]
+    # log_recom_movie = np.sort(logPreds, order)
+    log_recommended_movie = np.argmax(logPreds[:,1])
+
+    # print("Start training lime")
+    ### Lime Here ###
+    # feature_names = [onehot_index_to_feat[i] for i in onehot_index_to_feat]
+    # categorical_features = range(len(feature_names))
+    # predict_fn = lambda x: logClf.predict_proba(x)
+    # explainer = lime.lime_tabular.LimeTabularExplainer(X ,class_names=['Not recommended', 'Recommended'], feature_names = feature_names,
+    #                                                kernel_width=3, verbose=False)
+    #
+    # print("Explain instance")
+    # exp = explainer.explain_instance(X[recommended_movie], predict_fn, num_features=5)
+    # exp.save_to_file('static/NetflixPrize3/lime.html')
+    ### Lime ends here ###
 
     print(preds[0,0:10])
     print(preds[1,0:10])

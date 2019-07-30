@@ -133,3 +133,4 @@ dmypy.json
 *.json
 *.pkl
 NetflixPrize3/Untitled.ipynb
+NetflixPrize3/adult.data
