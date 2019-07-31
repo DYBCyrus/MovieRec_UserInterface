@@ -293,13 +293,13 @@ def train(X,Y):
                 featToCoef["Writer_" + w] = logCoef[0, k]
             elif type(onehot_index_to_feat[k]) == str and onehot_index_to_feat[k].startswith('g_'):
                 g = onehot_index_to_feat[k].split('g_')[1]
-                featToCoef["Genre" + g] = logCoef[0, k]
+                featToCoef["Genre_" + g] = logCoef[0, k]
             elif k == len(onehot_feat_to_index)-1:
                 featToCoef["NumVotes_{}".format(v)] = logCoef[0, k] * v
             elif k == len(onehot_feat_to_index)-2:
                 featToCoef["Rating_{}".format(v)] = logCoef[0, k] * v
             else:
-                featToCoef["Decade_{}".format(v)] = logCoef[0, k]
+                featToCoef["Decade_{}".format(onehot_index_to_feat[k])] = logCoef[0, k]
 
     # log_MovieEntry = fetchFeatures(index_to_movie_title_year[log_recommended_movie])
     # featToCoef = {}
