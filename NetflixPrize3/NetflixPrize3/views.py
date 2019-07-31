@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 import random
 import pandas as pd
 import os
+import operator
 import json
 import pickle
-# import lime
-# import lime.lime_tabular
+import matplotlib.pyplot as plt
 from collections import defaultdict
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -29,6 +29,11 @@ current_user_feat_Y = []
 movies_feat = lil_matrix(0)
 # index to movie title + year
 index_to_movie_title_year = {}
+dislikeExists = False
+likeExists = False
+twoSelectionsExist = False
+rating_fill_list = []
+numVotes_fill_list = []
 
 def button(request):
     # print(os.getcwd())
@@ -77,7 +82,8 @@ def fetchFeatures(longTitle="dummy"):
     return movieEntry
 
 def feedback(request):
-    global df, titles, current_user_feat_X, current_user_feat_Y
+    global df, titles, current_user_feat_X, current_user_feat_Y, \
+            dislikeExists, likeExists, twoSelectionsExist, rating_fill_list, numVotes_fill_list
     user_movie_entry = defaultdict(list)
     likeChoice = request.POST.get('likeChoice', False)
     # print(request.POST.get("genres", "N/A")[1])
@@ -90,18 +96,26 @@ def feedback(request):
     user_movie_entry["startYear"] = [request.POST.get("year")]
     print(request.POST.get("year"))
     user_movie_entry["rating"] = [request.POST.get("rating")]
+    if user_movie_entry["rating"] == "no":
+        rating_fill_list.append(len(current_user_feat_X))
     print(request.POST.get("rating"))
     user_movie_entry["numVotes"] = [request.POST.get("numVotes")]
+    if user_movie_entry["numVotes"] == "no":
+        numVotes_fill_list.append(len(current_user_feat_X))
     print(request.POST.get("numVotes"))
 
     user_feat = convert_to_feat(user_movie_entry)
     current_user_feat_X.append(user_feat)
     current_user_feat_Y.append(likeChoice == "like")
+    if not twoSelectionsExist:
+        dislikeExists = likeChoice == "dislike" or dislikeExists
+        likeExists = likeChoice == "like" or likeExists
+        twoSelectionsExist = likeExists and dislikeExists
 
     ex = None
     tree = None
     recommended = None
-    if len(current_user_feat_X) > 4:
+    if len(current_user_feat_X) > 4 and twoSelectionsExist:
         ex, tree, recommended = train(np.array(current_user_feat_X),np.array(current_user_feat_Y))
 
     # lime = False
@@ -125,8 +139,8 @@ col = {'tconst':0,
     'startYear':4,
     'region':5,
     'genres':6,
-    'directors_name':7,
-    'writers_name':8,
+    'directors_names':7,
+    'writers_names':8,
     'cast_name':9,
     'averageRating':10,
     'numVotes':11}
@@ -177,10 +191,10 @@ def features_construction():
             for c in str(m[col["cast_name"]]).split("/"):
                 movies_feat[i,onehot_feat_to_index["c_"+c]] = 1
             # director
-            for d in str(m[col["directors_name"]]).split("/"):
+            for d in str(m[col["directors_names"]]).split("/"):
                 movies_feat[i,onehot_feat_to_index["d_"+d]] = 1
             # writer
-            for w in str(m[col["writers_name"]]).split("/"):
+            for w in str(m[col["writers_names"]]).split("/"):
                 movies_feat[i,onehot_feat_to_index["w_"+w]] = 1
             # genre
             for g in str(m[col["genres"]]).split(","):
@@ -222,17 +236,21 @@ def convert_to_feat(movie_entry):
         decade = int(int(movie_entry["startYear"][0])/10) * 10
         feat[onehot_feat_to_index[decade]] = 1
     # rating
+    magicRating = 7
     if movie_entry["rating"][0] != "no":
         feat[len(onehot_feat_to_index)-2] = float(movie_entry["rating"][0])
     else:
-        feat[len(onehot_feat_to_index)-2] = np.mean(np.array(current_user_feat_X)\
-            [:,len(onehot_feat_to_index)-2])
+        feat[len(onehot_feat_to_index)-2] = \
+            np.mean(np.array(current_user_feat_X)[:,len(onehot_feat_to_index)-2]) \
+            if len(current_user_feat_X) > 0 else magicRating
     # numVotes
+    magicNumVotes = 10000
     if movie_entry["numVotes"][0] != "no":
         feat[len(onehot_feat_to_index)-1] = float(movie_entry["numVotes"][0])
     else:
-        feat[len(onehot_feat_to_index)-1] = np.mean(np.array(current_user_feat_X)\
-            [:,len(onehot_feat_to_index)-1])
+        feat[len(onehot_feat_to_index)-1] = \
+            np.mean(np.array(current_user_feat_X)[:,len(onehot_feat_to_index)-1]) \
+            if len(current_user_feat_X) > 0 else magicNumVotes
 
     return feat
 
@@ -252,27 +270,46 @@ def train(X,Y):
     logClf = LogisticRegression(random_state = 0, max_iter=100, n_jobs=4, solver='saga', multi_class ='ovr', penalty='l1').fit(X, Y)
 
     logPreds = logClf.predict_proba(movies_feat)
-    log_ascending_recommended_movie = np.argsort(logPreds[::-1])
+    log_ascending_recommended_movie = np.argsort(logPreds[:,-1])
     for log_recommended_movie in log_ascending_recommended_movie[::-1]:
         if index_to_movie_title_year[log_recommended_movie] not in seen_movies:
             break
 
+    logCoef = logClf.sparsify().coef_
+    # fetchFeatures passes a dictionary
+    log_MovieEntry = fetchFeatures(index_to_movie_title_year[log_recommended_movie])
+    featToCoef = {}
+    for c in log_MovieEntry["cast_name"]:
+        featToCoef["Cast_" + c] = logCoef[0, onehot_feat_to_index["c_" + c]]
+    for d in log_MovieEntry["directors_names"]:
+        featToCoef["Director_" + d] = logCoef[0, onehot_feat_to_index["d_" + d]]
+    for w in log_MovieEntry["writers_names"]:
+        featToCoef["Writer_" + w] = logCoef[0, onehot_feat_to_index["w_" + w]]
+    for g in log_MovieEntry["genres"]:
+        featToCoef["Genre_" + g] = logCoef[0, onehot_feat_to_index["g_" + g]]
+    featToCoef["Rating_{}".format(log_MovieEntry["averageRating"])] = \
+        logCoef[0, len(onehot_feat_to_index)-2] * log_MovieEntry["averageRating"]
+    featToCoef["NumVotes_{}".format(log_MovieEntry["numVotes"])] = \
+        logCoef[0, len(onehot_feat_to_index)-1] * log_MovieEntry["numVotes"]
+    decade = int(int(log_MovieEntry["startYear"])/10) * 10
+    featToCoef["Decade_{}".format(decade)] = logCoef[0, onehot_feat_to_index[decade]]
 
-    # print("Start training lime")
-    ### Lime Here ###
-    # feature_names = [onehot_index_to_feat[i] for i in onehot_index_to_feat]
-    # categorical_features = range(len(feature_names))
-    # predict_fn = lambda x: logClf.predict_proba(x)
-    # explainer = lime.lime_tabular.LimeTabularExplainer(X ,class_names=['Not recommended', 'Recommended'], feature_names = feature_names,
-    #                                                kernel_width=3, verbose=False)
-    #
-    # print("Explain instance")
-    # exp = explainer.explain_instance(X[recommended_movie], predict_fn, num_features=5)
-    # exp.save_to_file('static/NetflixPrize3/lime.html')
-    ### Lime ends here ###
+    sortedLogFeat = sorted(featToCoef.items(), key=operator.itemgetter(1), reverse=True)
 
-    print(preds[0,0:10])
-    print(preds[1,0:10])    # print(index_to_movie_title_year)
+    i = 0
+    xlabels = []
+    coefs = []
+    while sortedLogFeat[i][1] > 0 and i < 5:
+        xlabels.append(sortedLogFeat[i][0])
+        coefs.append(sortedLogFeat[i][1])
+    y_pos = np.arange(len(xlabels))
+    plt.bar(y_pos, coefs, align='center', alpha=0.5)
+    plt.xticks(y_pos, xlabels)
+    plt.ylabel('Feature Coefficient')
+    plt.title('Main Contributing Features')
+
+    plt.savefig('static/NetflixPrize3/MainFeatures.png')
+
     print(index_to_movie_title_year[recommended_movie])
 
     # referrence: https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html#sphx-glr-auto-examples-tree-plot-unveil-tree-structure-py
