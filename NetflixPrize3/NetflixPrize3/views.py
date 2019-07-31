@@ -2,19 +2,18 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.core import serializers
 import numpy as np
-import matplotlib.pyplot as plt
 import random
 import pandas as pd
 import os
 import operator
 import json
 import pickle
-import matplotlib.pyplot as plt
 from collections import defaultdict
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from scipy.sparse import lil_matrix
 from sklearn.tree.export import export_text
+from . import utility
 
 df = pd.DataFrame()
 titles = []
@@ -267,7 +266,7 @@ def train(X,Y):
             break
 
     print("Start training LogisticRegression")
-    logClf = LogisticRegression(random_state = 0, max_iter=100, n_jobs=4, solver='saga', multi_class ='ovr', penalty='l1').fit(X, Y)
+    logClf = LogisticRegression(random_state = 0, max_iter=100, solver='liblinear', penalty='l1').fit(X, Y)
 
     logPreds = logClf.predict_proba(movies_feat)
     log_ascending_recommended_movie = np.argsort(logPreds[:,-1])
@@ -276,39 +275,52 @@ def train(X,Y):
             break
 
     logCoef = logClf.sparsify().coef_
-    # fetchFeatures passes a dictionary
-    log_MovieEntry = fetchFeatures(index_to_movie_title_year[log_recommended_movie])
+    """
+    fetchFeatures passes a dictionary
+    """
     featToCoef = {}
-    for c in log_MovieEntry["cast_name"]:
-        featToCoef["Cast_" + c] = logCoef[0, onehot_feat_to_index["c_" + c]]
-    for d in log_MovieEntry["directors_names"]:
-        featToCoef["Director_" + d] = logCoef[0, onehot_feat_to_index["d_" + d]]
-    for w in log_MovieEntry["writers_names"]:
-        featToCoef["Writer_" + w] = logCoef[0, onehot_feat_to_index["w_" + w]]
-    for g in log_MovieEntry["genres"]:
-        featToCoef["Genre_" + g] = logCoef[0, onehot_feat_to_index["g_" + g]]
-    featToCoef["Rating_{}".format(log_MovieEntry["averageRating"])] = \
-        logCoef[0, len(onehot_feat_to_index)-2] * log_MovieEntry["averageRating"]
-    featToCoef["NumVotes_{}".format(log_MovieEntry["numVotes"])] = \
-        logCoef[0, len(onehot_feat_to_index)-1] * log_MovieEntry["numVotes"]
-    decade = int(int(log_MovieEntry["startYear"])/10) * 10
-    featToCoef["Decade_{}".format(decade)] = logCoef[0, onehot_feat_to_index[decade]]
+    target_movie = movies_feat[log_recommended_movie,:].toarray()[0].tolist()
+    for k,v in enumerate(target_movie):
+        if v != 0:
+            if type(onehot_index_to_feat[k]) == str and onehot_index_to_feat[k].startswith('c_'):
+                c = onehot_index_to_feat[k].split('c_')[1]
+                featToCoef["Cast_" + c] = logCoef[0, k]
+            elif type(onehot_index_to_feat[k]) == str and onehot_index_to_feat[k].startswith('d_'):
+                d = onehot_index_to_feat[k].split('d_')[1]
+                featToCoef["Director_" + d] = logCoef[0, k]
+            elif type(onehot_index_to_feat[k]) == str and onehot_index_to_feat[k].startswith('w_'):
+                w = onehot_index_to_feat[k].split('w_')[1]
+                featToCoef["Writer_" + w] = logCoef[0, k]
+            elif type(onehot_index_to_feat[k]) == str and onehot_index_to_feat[k].startswith('g_'):
+                g = onehot_index_to_feat[k].split('g_')[1]
+                featToCoef["Genre" + g] = logCoef[0, k]
+            elif k == len(onehot_feat_to_index)-1:
+                featToCoef["NumVotes_{}".format(v)] = logCoef[0, k] * v
+            elif k == len(onehot_feat_to_index)-2:
+                featToCoef["Rating_{}".format(v)] = logCoef[0, k] * v
+            else:
+                featToCoef["Decade_{}".format(v)] = logCoef[0, k]
+
+    # log_MovieEntry = fetchFeatures(index_to_movie_title_year[log_recommended_movie])
+    # featToCoef = {}
+    # for c in log_MovieEntry["cast_name"]:
+    #     featToCoef["Cast_" + c] = logCoef[0, onehot_feat_to_index["c_" + c]]
+    # for d in log_MovieEntry["directors_names"]:
+    #     featToCoef["Director_" + d] = logCoef[0, onehot_feat_to_index["d_" + d]]
+    # for w in log_MovieEntry["writers_names"]:
+    #     featToCoef["Writer_" + w] = logCoef[0, onehot_feat_to_index["w_" + w]]
+    # for g in log_MovieEntry["genres"]:
+    #     featToCoef["Genre_" + g] = logCoef[0, onehot_feat_to_index["g_" + g]]
+    # featToCoef["Rating_{}".format(log_MovieEntry["averageRating"])] = \
+    #     logCoef[0, len(onehot_feat_to_index)-2] * log_MovieEntry["averageRating"]
+    # featToCoef["NumVotes_{}".format(log_MovieEntry["numVotes"])] = \
+    #     logCoef[0, len(onehot_feat_to_index)-1] * log_MovieEntry["numVotes"]
+    # decade = int(int(log_MovieEntry["startYear"])/10) * 10
+    # featToCoef["Decade_{}".format(decade)] = logCoef[0, onehot_feat_to_index[decade]]
 
     sortedLogFeat = sorted(featToCoef.items(), key=operator.itemgetter(1), reverse=True)
 
-    i = 0
-    xlabels = []
-    coefs = []
-    while sortedLogFeat[i][1] > 0 and i < 5:
-        xlabels.append(sortedLogFeat[i][0])
-        coefs.append(sortedLogFeat[i][1])
-    y_pos = np.arange(len(xlabels))
-    plt.bar(y_pos, coefs, align='center', alpha=0.5)
-    plt.xticks(y_pos, xlabels)
-    plt.ylabel('Feature Coefficient')
-    plt.title('Main Contributing Features')
-
-    plt.savefig('static/NetflixPrize3/MainFeatures.png')
+    utility.plot_features(sortedLogFeat)
 
     print(index_to_movie_title_year[recommended_movie])
 
