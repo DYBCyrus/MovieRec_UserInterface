@@ -4,6 +4,7 @@ from django.core import serializers
 import numpy as np
 import random
 import pandas as pd
+import math
 import os
 import operator
 import json
@@ -42,6 +43,7 @@ def button(request):
         movieEntry = fetchFeatures()
         return render(request, 'home.html', {'titles':titles, 'movieData': movieEntry})
     df = pd.read_csv('IMDB_Final_Movies.csv')
+    df['numVotes']= df['numVotes'].apply(lambda x : math.log(x,10))
     title = df['primaryTitle'].tolist()
     year = df['startYear'].tolist()
     sorted_titles = json.load(open("sorted_movies_for_genres.json"))
@@ -149,8 +151,6 @@ def get_column(matrix, i):
 
 def features_construction():
     global movies_feat, col
-    # read data
-    df1 = pd.read_csv('IMDB_Final_Movies.csv')
     # data in numpy
     data = df1.values
     if not os.path.exists("feat_to_index.pkl") or not os.path.exists("index_to_feat.pkl"):
