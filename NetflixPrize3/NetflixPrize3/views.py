@@ -31,8 +31,7 @@ index_to_movie_title_year = {}
 dislikeExists = False
 likeExists = False
 twoSelectionsExist = False
-rating_fill_list = []
-numVotes_fill_list = []
+min_rating = max_rating = min_numVotes = max_numVotes = mean_rating = mean_numVotes = 0
 
 def button(request):
     # print(os.getcwd())
@@ -41,7 +40,7 @@ def button(request):
     if len(titles) > 0:
         movieEntry = fetchFeatures()
         return render(request, 'home.html', {'titles':titles, 'movieData': movieEntry})
-    df = pd.read_csv('IMDB_Final_Movies.csv')
+    # df = pd.read_csv('IMDB_Final_Movies.csv')
     title = df['primaryTitle'].tolist()
     year = df['startYear'].tolist()
     sorted_titles = json.load(open("sorted_movies_for_genres.json"))
@@ -75,14 +74,13 @@ def fetchFeatures(longTitle="dummy"):
     movieEntry["cast_name"] = movieEntry["cast_name"].split('/')
     movieEntry["genres"] = movieEntry["genres"].split(',')
 
-    # entry_feat = convert_to_feat(movieEntry)
     seen_movies.append(longTitle)
 
     return movieEntry
 
 def feedback(request):
     global df, titles, current_user_feat_X, current_user_feat_Y, \
-            dislikeExists, likeExists, twoSelectionsExist, rating_fill_list, numVotes_fill_list
+            dislikeExists, likeExists, twoSelectionsExist
     user_movie_entry = defaultdict(list)
     likeChoice = request.POST.get('likeChoice', False)
     # print(request.POST.get("genres", "N/A")[1])
@@ -95,15 +93,11 @@ def feedback(request):
     user_movie_entry["startYear"] = [request.POST.get("year")]
     print(request.POST.get("year"))
     user_movie_entry["rating"] = [request.POST.get("rating")]
-    if user_movie_entry["rating"] == "no":
-        rating_fill_list.append(len(current_user_feat_X))
     print(request.POST.get("rating"))
     user_movie_entry["numVotes"] = [request.POST.get("numVotes")]
-    if user_movie_entry["numVotes"] == "no":
-        numVotes_fill_list.append(len(current_user_feat_X))
     print(request.POST.get("numVotes"))
 
-    user_feat = convert_to_feat(user_movie_entry)
+    user_feat = convert_to_feat(user_movie_entry, int(likeChoice == "like"))
     current_user_feat_X.append(user_feat)
     current_user_feat_Y.append(likeChoice == "like")
     if not twoSelectionsExist:
@@ -148,11 +142,11 @@ def get_column(matrix, i):
     return [row[i] for row in matrix]
 
 def features_construction():
-    global movies_feat, col
+    global movies_feat, col, min_rating, max_rating, min_numVotes, max_numVotes, mean_rating, mean_numVotes, df
     # read data
-    df1 = pd.read_csv('IMDB_Final_Movies.csv')
+    df = pd.read_csv('IMDB_Final_Movies.csv')
     # data in numpy
-    data = df1.values
+    data = df.values
     if not os.path.exists("feat_to_index.pkl") or not os.path.exists("index_to_feat.pkl"):
         # create list for one hot encoding
         cast_list = list(set(["c_" + j for i in [x.split('/') for x in get_column(data,col["cast_name"])] for j in i]))
@@ -180,6 +174,12 @@ def features_construction():
         onehot_index_to_feat = pickle.load(open("index_to_feat.pkl","rb"))
 
     index_to_movie = {}
+    min_rating = df['averageRating'].min()
+    max_rating = df['averageRating'].max()
+    min_numVotes = df['numVotes'].min()
+    max_numVotes = df['numVotes'].max()
+    mean_rating = df['averageRating'].mean()
+    mean_numVotes = df['numVotes'].mean()
 
     if movies_feat.shape == (1,1):
         movies_feat = lil_matrix((len(data),len(onehot_feat_to_index)))
@@ -202,9 +202,11 @@ def features_construction():
             decade = int(m[col["startYear"]]/10) * 10
             movies_feat[i,onehot_feat_to_index[decade]] = 1
             # rating
-            movies_feat[i,len(onehot_feat_to_index)-2] = m[col["averageRating"]]
+            movies_feat[i,len(onehot_feat_to_index)-2] = (m[col["averageRating"]] - min_rating)\
+                / (max_rating - min_rating)
             # numVotes
-            movies_feat[i,len(onehot_feat_to_index)-1] = m[col["numVotes"]]
+            movies_feat[i,len(onehot_feat_to_index)-1] = (m[col["numVotes"]] - min_numVotes)\
+                / (max_numVotes - min_numVotes)
 
     if not os.path.exists("index_to_movie.pkl"):
         f = open("index_to_movie.pkl","wb")
@@ -215,8 +217,9 @@ def features_construction():
 
     return onehot_feat_to_index, onehot_index_to_feat, index_to_movie
 
-def convert_to_feat(movie_entry):
-    global onehot_feat_to_index, current_user_feat_X
+def convert_to_feat(movie_entry, label):
+    global onehot_feat_to_index, current_user_feat_X, current_user_feat_Y
+    global min_rating, max_rating, min_numVotes, max_numVotes, mean_rating, mean_numVotes
     feat = np.zeros(len(onehot_feat_to_index))
     # cast
     for c in movie_entry["cast_name"]:
@@ -235,26 +238,31 @@ def convert_to_feat(movie_entry):
         decade = int(int(movie_entry["startYear"][0])/10) * 10
         feat[onehot_feat_to_index[decade]] = 1
     # rating
-    magicRating = 7
+    magicRating = (mean_rating - min_rating) / (max_rating - min_rating)
     if movie_entry["rating"][0] != "no":
-        feat[len(onehot_feat_to_index)-2] = float(movie_entry["rating"][0])
+        feat[len(onehot_feat_to_index)-2] = (float(movie_entry["rating"][0]) - min_rating)\
+            / (max_rating - min_rating)
     else:
+        satisfied_Y = np.where(np.array(current_user_feat_Y) == label)[0]
         feat[len(onehot_feat_to_index)-2] = \
-            np.mean(np.array(current_user_feat_X)[:,len(onehot_feat_to_index)-2]) \
-            if len(current_user_feat_X) > 0 else magicRating
+            np.mean(np.array(current_user_feat_X)[satisfied_Y][:,len(onehot_feat_to_index)-2]) \
+                if len(satisfied_Y) > 0 else magicRating
     # numVotes
-    magicNumVotes = 10000
+    magicNumVotes = (mean_numVotes - min_numVotes) / (max_numVotes - min_numVotes)
     if movie_entry["numVotes"][0] != "no":
-        feat[len(onehot_feat_to_index)-1] = float(movie_entry["numVotes"][0])
+        feat[len(onehot_feat_to_index)-1] = (float(movie_entry["numVotes"][0]) - min_numVotes)\
+            / (max_numVotes - min_numVotes)
     else:
+        satisfied_Y = np.where(np.array(current_user_feat_Y) == label)[0]
         feat[len(onehot_feat_to_index)-1] = \
-            np.mean(np.array(current_user_feat_X)[:,len(onehot_feat_to_index)-1]) \
-            if len(current_user_feat_X) > 0 else magicNumVotes
+            np.mean(np.array(current_user_feat_X)[satisfied_Y][:,len(onehot_feat_to_index)-1]) \
+                if len(satisfied_Y) > 0 else magicNumVotes
 
     return feat
 
 def train(X,Y):
     global onehot_index_to_feat, movies_feat, index_to_movie_title_year, seen_movies
+    global min_rating, max_rating, min_numVotes, max_numVotes
     X = lil_matrix(X)
     clf = DecisionTreeClassifier()
     clf.fit(X,Y)
@@ -295,9 +303,11 @@ def train(X,Y):
                 g = onehot_index_to_feat[k].split('g_')[1]
                 featToCoef["Genre_" + g] = logCoef[0, k]
             elif k == len(onehot_feat_to_index)-1:
-                featToCoef["NumVotes_{}".format(v)] = logCoef[0, k] * v
+                featToCoef["NumVotes_{}".format(v*(max_numVotes - min_numVotes) + min_numVotes)] = \
+                    logCoef[0, k] * v
             elif k == len(onehot_feat_to_index)-2:
-                featToCoef["Rating_{}".format(v)] = logCoef[0, k] * v
+                featToCoef["Rating_{}".format(v*(max_rating - min_rating) + min_rating)] = \
+                    logCoef[0, k] * v
             else:
                 featToCoef["Decade_{}".format(onehot_index_to_feat[k])] = logCoef[0, k]
 
@@ -322,7 +332,8 @@ def train(X,Y):
 
     utility.plot_features(sortedLogFeat)
 
-    print(index_to_movie_title_year[recommended_movie])
+    print(index_to_movie_title_year[log_recommended_movie])
+    recommended_movie = log_recommended_movie
 
     # referrence: https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html#sphx-glr-auto-examples-tree-plot-unveil-tree-structure-py
     feature = clf.tree_.feature
