@@ -42,7 +42,6 @@ def button(request):
         movieEntry = fetchFeatures()
         return render(request, 'home.html', {'titles':titles, 'movieData': movieEntry})
     # df = pd.read_csv('IMDB_Final_Movies.csv')
-    df['numVotes']= df['numVotes'].apply(lambda x : math.log(x,10))
     title = df['primaryTitle'].tolist()
     year = df['startYear'].tolist()
     sorted_titles = json.load(open("sorted_movies_for_genres.json"))
@@ -214,7 +213,7 @@ def features_construction():
             # rating
             movies_feat[i,len(onehot_feat_to_index)-2] = m[col["averageRating"]]
             # numVotes
-            movies_feat[i,len(onehot_feat_to_index)-1] = m[col["numVotes"]]
+            movies_feat[i,len(onehot_feat_to_index)-1] = math.log(m[col["numVotes"]],10)
 
     if not os.path.exists("index_to_movie.pkl"):
         f = open("index_to_movie.pkl","wb")
@@ -259,11 +258,11 @@ def convert_to_feat(movie_entry, label):
                 if len(satisfied_Y) > 0 else magicRating
     # numVotes
     # magicNumVotes = (mean_numVotes - min_numVotes) / (max_numVotes - min_numVotes)
-    magicNumVotes = mean_numVotes
+    magicNumVotes = math.log(mean_numVotes,10)
     if movie_entry["numVotes"][0] != "no":
         # feat[len(onehot_feat_to_index)-1] = (float(movie_entry["numVotes"][0]) - min_numVotes)\
         #     / (max_numVotes - min_numVotes)
-        feat[len(onehot_feat_to_index)-1] = float(movie_entry["numVotes"][0])
+        feat[len(onehot_feat_to_index)-1] = math.log(float(movie_entry["numVotes"][0]),10)
     else:
         satisfied_Y = np.where(np.array(current_user_feat_Y) == label)[0]
         feat[len(onehot_feat_to_index)-1] = \

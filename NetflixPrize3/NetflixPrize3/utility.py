@@ -20,6 +20,6 @@ def plot_features(sortedLogFeat):
     plt.xlabel("Features")
     plt.title('Main Contributing Features')
     # plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
-
+    plt.tight_layout()
     plt.savefig('static/NetflixPrize3/MainFeatures.png')
     plt.close()

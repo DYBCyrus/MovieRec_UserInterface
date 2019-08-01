@@ -81,7 +81,7 @@
                 }
                 else if(div_id == "numVotes") {
                     fieldName = "numVotes";
-                    fieldValue = Math.round(Math.pow(10,{{ movieData | safe }}[fieldName]));
+                    fieldValue = {{ movieData | safe }}[fieldName];
                 }
                 text = text + "<input type=\"radio\" name=\"" + div_id + "\" value="
                  + {{ movieData | safe }}[fieldName] + " checked" + ">Yes - "
