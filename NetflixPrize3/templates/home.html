@@ -69,20 +69,25 @@
                 document.getElementById(div_id).innerHTML = text;
             }
             function feature_boolean(div_id) {
-                var text = document.getElementById(div_id).innerHTML
+                var text = document.getElementById(div_id).innerHTML;
+                var fieldValue;
                 if(div_id == "year") {
-                    fieldName = "startYear"
+                    fieldName = "startYear";
+                    fieldValue = {{ movieData | safe }}[fieldName];
                 }
                 else if(div_id == "rating") {
-                    fieldName = "averageRating"
+                    fieldName = "averageRating";
+                    fieldValue = {{ movieData | safe }}[fieldName];
                 }
                 else if(div_id == "numVotes") {
-                    fieldName = "numVotes"
+                    fieldName = "numVotes";
+                    fieldValue = Math.round(Math.pow(10,{{ movieData | safe }}[fieldName]));
                 }
                 text = text + "<input type=\"radio\" name=\"" + div_id + "\" value="
-                 + {{ movieData | safe }}[fieldName] + " checked" + ">Yes<br>"
+                 + {{ movieData | safe }}[fieldName] + " checked" + ">Yes - "
+                 + fieldValue + "<br>";
                 text = text + "<input type=\"radio\" name=\"" + div_id +
-                        "\" value=\"no" + "\">No<br>"
+                        "\" value=\"no" + "\">No<br>";
                 document.getElementById(div_id).innerHTML = text;
             }
         </script>
@@ -192,14 +197,11 @@
             <h4>Tree Structure:<br><pre>{{tree_structure}}</pre></h4>
         {% endif %}
 
-        <!-- {% if lime %}
-        <div id="lime"></div>
-        <script>
-        $(function(){
-          $("#lime").load("{% static 'NetflixPrize3/lime.html' %}");
-        });
-        </script>
-        {% endif %} -->
+        {% if logistic %}
+        <div>
+            <img src="{% static 'NetflixPrize3/MainFeatures.jpg' %}">
+        </div>
+        {% endif %}
 
     </body>
 </html>

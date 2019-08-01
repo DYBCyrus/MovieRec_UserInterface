@@ -4,6 +4,7 @@ from django.core import serializers
 import numpy as np
 import random
 import pandas as pd
+import math
 import os
 import operator
 import json
@@ -41,6 +42,7 @@ def button(request):
         movieEntry = fetchFeatures()
         return render(request, 'home.html', {'titles':titles, 'movieData': movieEntry})
     # df = pd.read_csv('IMDB_Final_Movies.csv')
+    df['numVotes']= df['numVotes'].apply(lambda x : math.log(x,10))
     title = df['primaryTitle'].tolist()
     year = df['startYear'].tolist()
     sorted_titles = json.load(open("sorted_movies_for_genres.json"))
@@ -201,12 +203,18 @@ def features_construction():
             # year
             decade = int(m[col["startYear"]]/10) * 10
             movies_feat[i,onehot_feat_to_index[decade]] = 1
+
+            # # rating
+            # movies_feat[i,len(onehot_feat_to_index)-2] = (m[col["averageRating"]] - min_rating)\
+            #     / (max_rating - min_rating)
+            # # numVotes
+            # movies_feat[i,len(onehot_feat_to_index)-1] = (m[col["numVotes"]] - min_numVotes)\
+            #     / (max_numVotes - min_numVotes)
+
             # rating
-            movies_feat[i,len(onehot_feat_to_index)-2] = (m[col["averageRating"]] - min_rating)\
-                / (max_rating - min_rating)
+            movies_feat[i,len(onehot_feat_to_index)-2] = m[col["averageRating"]]
             # numVotes
-            movies_feat[i,len(onehot_feat_to_index)-1] = (m[col["numVotes"]] - min_numVotes)\
-                / (max_numVotes - min_numVotes)
+            movies_feat[i,len(onehot_feat_to_index)-1] = m[col["numVotes"]]
 
     if not os.path.exists("index_to_movie.pkl"):
         f = open("index_to_movie.pkl","wb")
@@ -238,20 +246,24 @@ def convert_to_feat(movie_entry, label):
         decade = int(int(movie_entry["startYear"][0])/10) * 10
         feat[onehot_feat_to_index[decade]] = 1
     # rating
-    magicRating = (mean_rating - min_rating) / (max_rating - min_rating)
+    # magicRating = (mean_rating - min_rating) / (max_rating - min_rating)
+    magicRating = mean_rating
     if movie_entry["rating"][0] != "no":
-        feat[len(onehot_feat_to_index)-2] = (float(movie_entry["rating"][0]) - min_rating)\
-            / (max_rating - min_rating)
+        # feat[len(onehot_feat_to_index)-2] = (float(movie_entry["rating"][0]) - min_rating)\
+        #     / (max_rating - min_rating)
+        feat[len(onehot_feat_to_index)-2] = float(movie_entry["rating"][0])
     else:
         satisfied_Y = np.where(np.array(current_user_feat_Y) == label)[0]
         feat[len(onehot_feat_to_index)-2] = \
             np.mean(np.array(current_user_feat_X)[satisfied_Y][:,len(onehot_feat_to_index)-2]) \
                 if len(satisfied_Y) > 0 else magicRating
     # numVotes
-    magicNumVotes = (mean_numVotes - min_numVotes) / (max_numVotes - min_numVotes)
+    # magicNumVotes = (mean_numVotes - min_numVotes) / (max_numVotes - min_numVotes)
+    magicNumVotes = mean_numVotes
     if movie_entry["numVotes"][0] != "no":
-        feat[len(onehot_feat_to_index)-1] = (float(movie_entry["numVotes"][0]) - min_numVotes)\
-            / (max_numVotes - min_numVotes)
+        # feat[len(onehot_feat_to_index)-1] = (float(movie_entry["numVotes"][0]) - min_numVotes)\
+        #     / (max_numVotes - min_numVotes)
+        feat[len(onehot_feat_to_index)-1] = float(movie_entry["numVotes"][0])
     else:
         satisfied_Y = np.where(np.array(current_user_feat_Y) == label)[0]
         feat[len(onehot_feat_to_index)-1] = \
@@ -264,14 +276,6 @@ def train(X,Y):
     global onehot_index_to_feat, movies_feat, index_to_movie_title_year, seen_movies
     global min_rating, max_rating, min_numVotes, max_numVotes
     X = lil_matrix(X)
-    clf = DecisionTreeClassifier()
-    clf.fit(X,Y)
-
-    preds = clf.predict_proba(movies_feat)
-    ascending_recommended_movie = np.argsort(preds[:,1])
-    for recommended_movie in ascending_recommended_movie[::-1]:
-        if index_to_movie_title_year[recommended_movie] not in seen_movies:
-            break
 
     print("Start training LogisticRegression")
     logClf = LogisticRegression(random_state = 0, max_iter=100, solver='liblinear', penalty='l1').fit(X, Y)
@@ -303,68 +307,20 @@ def train(X,Y):
                 g = onehot_index_to_feat[k].split('g_')[1]
                 featToCoef["Genre_" + g] = logCoef[0, k]
             elif k == len(onehot_feat_to_index)-1:
-                featToCoef["NumVotes_{}".format(v*(max_numVotes - min_numVotes) + min_numVotes)] = \
-                    logCoef[0, k] * v
+                # featToCoef["NumVotes_{}".format(v*(max_numVotes - min_numVotes) + min_numVotes)] = \
+                #     logCoef[0, k] * v
+                featToCoef["NumVotes_{}".format(v)] = logCoef[0, k] * v
             elif k == len(onehot_feat_to_index)-2:
-                featToCoef["Rating_{}".format(v*(max_rating - min_rating) + min_rating)] = \
-                    logCoef[0, k] * v
+                # featToCoef["Rating_{}".format(v*(max_rating - min_rating) + min_rating)] = \
+                #     logCoef[0, k] * v
+                featToCoef["Rating_{}".format(v)] = logCoef[0, k] * v
             else:
                 featToCoef["Decade_{}".format(onehot_index_to_feat[k])] = logCoef[0, k]
-
-    # log_MovieEntry = fetchFeatures(index_to_movie_title_year[log_recommended_movie])
-    # featToCoef = {}
-    # for c in log_MovieEntry["cast_name"]:
-    #     featToCoef["Cast_" + c] = logCoef[0, onehot_feat_to_index["c_" + c]]
-    # for d in log_MovieEntry["directors_names"]:
-    #     featToCoef["Director_" + d] = logCoef[0, onehot_feat_to_index["d_" + d]]
-    # for w in log_MovieEntry["writers_names"]:
-    #     featToCoef["Writer_" + w] = logCoef[0, onehot_feat_to_index["w_" + w]]
-    # for g in log_MovieEntry["genres"]:
-    #     featToCoef["Genre_" + g] = logCoef[0, onehot_feat_to_index["g_" + g]]
-    # featToCoef["Rating_{}".format(log_MovieEntry["averageRating"])] = \
-    #     logCoef[0, len(onehot_feat_to_index)-2] * log_MovieEntry["averageRating"]
-    # featToCoef["NumVotes_{}".format(log_MovieEntry["numVotes"])] = \
-    #     logCoef[0, len(onehot_feat_to_index)-1] * log_MovieEntry["numVotes"]
-    # decade = int(int(log_MovieEntry["startYear"])/10) * 10
-    # featToCoef["Decade_{}".format(decade)] = logCoef[0, onehot_feat_to_index[decade]]
 
     sortedLogFeat = sorted(featToCoef.items(), key=operator.itemgetter(1), reverse=True)
 
     utility.plot_features(sortedLogFeat)
 
     print(index_to_movie_title_year[log_recommended_movie])
-    recommended_movie = log_recommended_movie
 
-    # referrence: https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html#sphx-glr-auto-examples-tree-plot-unveil-tree-structure-py
-    feature = clf.tree_.feature
-    threshold = clf.tree_.threshold
-    d_path = clf.decision_path(movies_feat[recommended_movie])
-    leave_id = clf.apply(movies_feat[recommended_movie])
-
-    sample_id = 0
-    node_index = d_path.indices[d_path.indptr[sample_id]:
-                                        d_path.indptr[sample_id + 1]]
-
-    explanation = ""
-    for node_id in node_index:
-        if leave_id[sample_id] == node_id:
-            continue
-
-        if (movies_feat[recommended_movie][sample_id, feature[node_id]] <= threshold[node_id]):
-            threshold_sign = "<="
-        else:
-            threshold_sign = ">"
-
-        explanation += "decision id node {} : ({} (= {}) {} {})".format(
-                        node_id,
-                        onehot_index_to_feat[feature[node_id]],
-                        movies_feat[recommended_movie][sample_id, feature[node_id]],
-                        threshold_sign,
-                        threshold[node_id]) + '\n'
-
-    # for i,d in enumerate(clf.feature_importances_):
-    #     if d != 0:
-    #         print(onehot_index_to_feat[i], d)
-
-    tree_structure = export_text(clf, feature_names=list(onehot_index_to_feat.values()))
-    return explanation, tree_structure, index_to_movie_title_year[recommended_movie]
+    return "explanation", "tree_structure", index_to_movie_title_year[log_recommended_movie]
