@@ -32,6 +32,7 @@ index_to_movie_title_year = {}
 dislikeExists = False
 likeExists = False
 twoSelectionsExist = False
+logistic = False
 min_rating = max_rating = min_numVotes = max_numVotes = mean_rating = mean_numVotes = 0
 
 def button(request):
@@ -81,7 +82,7 @@ def fetchFeatures(longTitle="dummy"):
 
 def feedback(request):
     global df, titles, current_user_feat_X, current_user_feat_Y, \
-            dislikeExists, likeExists, twoSelectionsExist
+            dislikeExists, likeExists, twoSelectionsExist, logistic
     user_movie_entry = defaultdict(list)
     likeChoice = request.POST.get('likeChoice', False)
     # print(request.POST.get("genres", "N/A")[1])
@@ -115,11 +116,12 @@ def feedback(request):
     # lime = False
     if request.POST.get('fetch', 'Random') == 'Recommend' and recommended:
         movieEntry = fetchFeatures(recommended)
+        logistic = True
         # lime = True
     else:
         movieEntry = fetchFeatures()
     return render(request, "home.html", {'titles': titles, "movieData": movieEntry,\
-        "explanation": ex, "tree_structure": tree})
+        "explanation": ex, "tree_structure": tree, "logistic":logistic})
 
 
 """
