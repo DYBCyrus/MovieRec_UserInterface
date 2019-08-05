@@ -108,10 +108,9 @@ def feedback(request):
         twoSelectionsExist = likeExists and dislikeExists
 
     ex = None
-    tree = None
     recommended = None
     if len(current_user_feat_X) > 4 and twoSelectionsExist:
-        ex, tree, recommended = train(np.array(current_user_feat_X),np.array(current_user_feat_Y))
+        ex, recommended = train(np.array(current_user_feat_X),np.array(current_user_feat_Y))
 
     # lime = False
     if request.POST.get('fetch', 'Random') == 'Recommend' and recommended:
@@ -121,7 +120,7 @@ def feedback(request):
     else:
         movieEntry = fetchFeatures()
     return render(request, "home.html", {'titles': titles, "movieData": movieEntry,\
-        "explanation": ex, "tree_structure": tree, "logistic":logistic})
+        "explanation": ex, "logistic":logistic})
 
 
 """
@@ -324,4 +323,4 @@ def train(X,Y):
 
     print(index_to_movie_title_year[log_recommended_movie])
 
-    return "explanation", "tree_structure", index_to_movie_title_year[log_recommended_movie]
+    return "explanation", index_to_movie_title_year[log_recommended_movie]

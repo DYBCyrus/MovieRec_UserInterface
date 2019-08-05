@@ -54,7 +54,7 @@
             function movie_link() {
                 var t = {{ movieData | safe }}["tconst"]
                 text = "<a href=\"https://www.imdb.com/title/" + t +
-                        "\" target=\"_blank\">Details of recommended movie</a>";
+                        "/plotsummary#synopsis\" target=\"_blank\">Synopsis of recommended movie</a>";
                 document.getElementById("link").innerHTML = text;
             }
             function feature_box(key,div_id) {
@@ -193,8 +193,7 @@
         <button type="submit" name="fetch" form="feedbackForm" value="Random">Random</button>
         <button type="submit" name="fetch" form="feedbackForm" value="Recommend">Recommend</button>
         {% if explanation is not None %}
-            <h4>Explanation:<br><pre>{{explanation}}</pre></h4>
-            <h4>Tree Structure:<br><pre>{{tree_structure}}</pre></h4>
+            <h4>Explanation:<br></h4>
         {% endif %}
 
         {% if logistic %}
