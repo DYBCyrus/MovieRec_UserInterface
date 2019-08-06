@@ -278,7 +278,7 @@ def train(X,Y):
     X = lil_matrix(X)
 
     print("Start training LogisticRegression")
-    logClf = LogisticRegression(random_state = 0, max_iter=100, solver='liblinear', penalty='l1').fit(X, Y)
+    logClf = LogisticRegression(random_state = 0, max_iter=100, solver='liblinear', penalty='l2').fit(X, Y)
 
     logPreds = logClf.predict_proba(movies_feat)
     log_ascending_recommended_movie = np.argsort(logPreds[:,-1])
