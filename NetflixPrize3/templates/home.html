@@ -25,10 +25,8 @@
         </script>
         <script>
             function movie_link() {
-                var t = {{ movieData | safe }}["tconst"]
-                text = "<a href=\"https://www.imdb.com/title/" + t +
-                        "/plotsummary#synopsis\" target=\"_blank\">Synopsis of recommended movie</a>";
-                document.getElementById("link").innerHTML = text;
+                text = {{ movieData | safe }}["description"]
+                document.getElementById("link").innerHTML += text;
             }
             function feature_box(key,div_id) {
                 var feat = {{ movieData | safe }}[key];
@@ -110,7 +108,7 @@
         {% endif %}
 
         <h2 id="m_name"></h2>
-        <h3 id="link"></h3>
+        <h3 id="link">Synopsis: </h3>
 
         {% if movieData is not None %}
             <form method="post" action="/feedback" id="feedbackForm">

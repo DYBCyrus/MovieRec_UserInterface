@@ -42,7 +42,7 @@ def button(request):
     if len(titles) > 0:
         movieEntry = fetchFeatures()
         return render(request, 'home.html', {'titles':titles, 'movieData': movieEntry})
-    # df = pd.read_csv('IMDB_Final_Movies.csv')
+    # df = pd.read_csv('IMDB_Meta_Combined_Final.csv')
     title = df['primaryTitle'].tolist()
     year = df['startYear'].tolist()
     sorted_titles = json.load(open("sorted_movies_for_genres.json"))
@@ -137,16 +137,16 @@ helper functions to do feature matching/cleaning (copied from previous notebook)
 # column indices
 col = {'tconst':0,
     'primaryTitle':1,
-    'originalTitle':2,
-    'titlesfromUS/UK':3,
-    'startYear':4,
-    'region':5,
-    'genres':6,
-    'directors_names':7,
-    'writers_names':8,
-    'cast_name':9,
-    'averageRating':10,
-    'numVotes':11}
+    'startYear':2,
+    'genres':3,
+    'directors_names':4,
+    'writers_names':5,
+    'cast_name':6,
+    'averageRating':7,
+    'numVotes':8,
+    'metascore':9,
+    'critics_reviews_count':10,
+    'description':11}
 
 def get_column(matrix, i):
     return [row[i] for row in matrix]
@@ -154,14 +154,14 @@ def get_column(matrix, i):
 def features_construction():
     global movies_feat, col, min_rating, max_rating, min_numVotes, max_numVotes, mean_rating, mean_numVotes, df
     # read data
-    df = pd.read_csv('IMDB_Final_Movies.csv')
+    df = pd.read_csv('Combined_Dataset_Final.csv')
     # data in numpy
     data = df.values
     if not os.path.exists("feat_to_index.pkl") or not os.path.exists("index_to_feat.pkl"):
         # create list for one hot encoding
         cast_list = list(set(["c_" + j for i in [x.split('/') for x in get_column(data,col["cast_name"])] for j in i]))
-        director_list = list(set(["d_" + j for i in [str(x).split('/') for x in get_column(data,col["directors_name"])] for j in i]))
-        writers_list = list(set(["w_" + j for i in [str(x).split('/') for x in get_column(data,col["writers_name"])] for j in i]))
+        director_list = list(set(["d_" + j for i in [str(x).split('/') for x in get_column(data,col["directors_names"])] for j in i]))
+        writers_list = list(set(["w_" + j for i in [str(x).split('/') for x in get_column(data,col["writers_names"])] for j in i]))
         genre_list = list(set(["g_" + j for i in [str(x).split(',') for x in get_column(data,col["genres"])] for j in i]))
         year_list = list(np.arange(1890,2020,10))
 
