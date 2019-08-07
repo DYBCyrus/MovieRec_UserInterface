@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.core import serializers
+from datetime import datetime
 import numpy as np
 import random
 import pandas as pd
@@ -33,11 +34,13 @@ dislikeExists = False
 likeExists = False
 twoSelectionsExist = False
 logistic = False
+log_file = None
 min_rating = max_rating = min_numVotes = max_numVotes = mean_rating = mean_numVotes = 0
 
 def button(request):
     # print(os.getcwd())
     global df, titles, sorted_titles, onehot_feat_to_index, onehot_index_to_feat, index_to_movie_title_year
+    global log_file
     onehot_feat_to_index, onehot_index_to_feat, index_to_movie_title_year = features_construction()
     if len(titles) > 0:
         movieEntry = fetchFeatures()
@@ -48,24 +51,28 @@ def button(request):
     sorted_titles = json.load(open("sorted_movies_for_genres.json"))
     for (i,j) in zip(title,year):
         titles.append(i + '(' + str(int(j)) + ')')
-    movieEntry = fetchFeatures()
     dir_path = os.getcwd()
-    os.makedirs(os.path.join(dir_path,'log'), exist_ok=True)
+    os.makedirs(os.path.join(dir_path,'logs'), exist_ok=True)
     # Create log file here
     # Obtain the time and create a string for file name
-
+    name = "logs/log-" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".log"
+    log_file = open(name, "w+")
+    movieEntry = fetchFeatures()
     return render(request, 'home.html', {'titles': titles, 'movieData': movieEntry})
 
 def fetchFeatures(longTitle="dummy"):
-    global df, titles, sorted_titles, seen_movies
+    global df, titles, sorted_titles, seen_movies, log_file
+    if longTitle == "dummy":
+        log_file.write("Random movie: ")
     while longTitle in seen_movies:
         # longTitle = request.POST.get('title', False)
         gen = random.sample(sorted_titles.keys(),1)[0]
         rand_sample = random.sample(sorted_titles[gen][:100],1)
         longTitle = rand_sample[0][0] + "(" + rand_sample[0][1] + ")"
+    log_file.write(longTitle + "\n")
+    log_file.flush()
+    os.fsync(log_file.fileno())
     title = ""
-
-    # Append title to the file
     print()
     if longTitle:
         title = longTitle.split('(')
@@ -90,22 +97,36 @@ def fetchFeatures(longTitle="dummy"):
 
 def feedback(request):
     global df, titles, current_user_feat_X, current_user_feat_Y, \
-            dislikeExists, likeExists, twoSelectionsExist, logistic
+            dislikeExists, likeExists, twoSelectionsExist, logistic, log_file
     user_movie_entry = defaultdict(list)
     likeChoice = request.POST.get('likeChoice', False)
+    log_file.write("The user " + likeChoice + "d this movie \n")
+    log_file.write("The follwing features played a role in the user preference:\n")
+
+
     # print(request.POST.get("genres", "N/A")[1])
     feat_list = ["directors_names", "writers_names", "cast_name", "genres"]
     for feat in feat_list:
         temp = request.POST.getlist(feat, "N/A")
         if temp != "N/A":
             user_movie_entry[feat] = temp
-        print(" ".join(temp) if temp != "N/A" else "N/A")
+            # print(" ".join(temp) if temp != "N/A" else "N/A")
+            log_file.write(feat.capitalize() + ": " + " ".join(temp) +"\n")
     user_movie_entry["startYear"] = [request.POST.get("year","no")]
-    print(request.POST.get("year"))
+    if user_movie_entry["startYear"] != 'no':
+        log_file.write("Year - " + user_movie_entry["startYear"][0] + "\n")
+
     user_movie_entry["rating"] = [request.POST.get("rating","no")]
-    print(request.POST.get("rating"))
+    if user_movie_entry["rating"] != 'no':
+        log_file.write("Rating - " + user_movie_entry["rating"][0] + "\n")
+
     user_movie_entry["numVotes"] = [request.POST.get("numVotes", "no")]
-    print(request.POST.get("numVotes"))
+    if user_movie_entry["numVotes"] != 'no':
+        log_file.write("Number of Votes - " + user_movie_entry["numVotes"][0] + "\n")
+
+    log_file.write("\n")
+    log_file.flush()
+    os.fsync(log_file.fileno())
 
     user_feat = convert_to_feat(user_movie_entry, int(likeChoice == "like"))
     current_user_feat_X.append(user_feat)
@@ -122,6 +143,9 @@ def feedback(request):
 
     # lime = False
     if request.POST.get('fetch', 'Random') == 'Recommend' and recommended:
+        log_file.write("Recommended movie: " + recommended + "\n")
+        log_file.flush()
+        os.fsync(log_file.fileno())
         movieEntry = fetchFeatures(recommended)
         logistic = True
         # lime = True
