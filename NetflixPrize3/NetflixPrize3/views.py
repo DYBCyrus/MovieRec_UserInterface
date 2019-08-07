@@ -49,6 +49,11 @@ def button(request):
     for (i,j) in zip(title,year):
         titles.append(i + '(' + str(int(j)) + ')')
     movieEntry = fetchFeatures()
+    dir_path = os.getcwd()
+    os.makedirs(os.path.join(dir_path,'log'), exist_ok=True)
+    # Create log file here
+    # Obtain the time and create a string for file name
+
     return render(request, 'home.html', {'titles': titles, 'movieData': movieEntry})
 
 def fetchFeatures(longTitle="dummy"):
@@ -59,6 +64,9 @@ def fetchFeatures(longTitle="dummy"):
         rand_sample = random.sample(sorted_titles[gen][:100],1)
         longTitle = rand_sample[0][0] + "(" + rand_sample[0][1] + ")"
     title = ""
+
+    # Append title to the file
+    print()
     if longTitle:
         title = longTitle.split('(')
         ti = title[0]
@@ -92,11 +100,11 @@ def feedback(request):
         if temp != "N/A":
             user_movie_entry[feat] = temp
         print(" ".join(temp) if temp != "N/A" else "N/A")
-    user_movie_entry["startYear"] = [request.POST.get("year")]
+    user_movie_entry["startYear"] = [request.POST.get("year","no")]
     print(request.POST.get("year"))
-    user_movie_entry["rating"] = [request.POST.get("rating")]
+    user_movie_entry["rating"] = [request.POST.get("rating","no")]
     print(request.POST.get("rating"))
-    user_movie_entry["numVotes"] = [request.POST.get("numVotes")]
+    user_movie_entry["numVotes"] = [request.POST.get("numVotes", "no")]
     print(request.POST.get("numVotes"))
 
     user_feat = convert_to_feat(user_movie_entry, int(likeChoice == "like"))
@@ -278,7 +286,7 @@ def train(X,Y):
     X = lil_matrix(X)
 
     print("Start training LogisticRegression")
-    logClf = LogisticRegression(random_state = 0, max_iter=100, solver='liblinear', penalty='l1').fit(X, Y)
+    logClf = LogisticRegression(random_state = 0, max_iter=100, solver='liblinear', penalty='l2').fit(X, Y)
 
     logPreds = logClf.predict_proba(movies_feat)
     log_ascending_recommended_movie = np.argsort(logPreds[:,-1])

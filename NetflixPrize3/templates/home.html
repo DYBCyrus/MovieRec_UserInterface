@@ -5,33 +5,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
-        <style>
-            .ui-autocomplete { height: 200px; width: 300px; overflow-y: scroll; overflow-x: scroll; }
-            #title { width: 300px; }
-            .container { border:2px solid #ccc; width:400px; height: 200px; overflow-y: scroll; overflow-x: scroll; }
-            .container_top { border:2px solid #ccc; width:280px; height: 200px; overflow-y: scroll; overflow-x: scroll; }
-            .box {
-                display: grid;
-                height: 200px;
-                grid-template-columns: repeat(4, 1fr);
-                grid-template-rows: 100px;
-                column-gap: 20px;
-            }
-            .box1 {
-                display: grid;
-                height: 50px;
-                grid-template-columns: repeat(3, 1fr);
-                grid-template-rows: 100px;
-                column-gap: 20px;
-            }
-            .box1_top {
-                display: grid;
-                height: 50px;
-                grid-template-columns: repeat(4, 1fr);
-                grid-template-rows: 100px;
-                column-gap: 20px;
-            }
-        </style>
+        <link rel="stylesheet" type="text/css" href="{% static 'NetflixPrize3/style.css' %}">
         <meta charset="utf-8">
         <title>NetflixPrize3!</title>
 
@@ -49,7 +23,6 @@
                 });
             });
         </script>
-
         <script>
             function movie_link() {
                 var t = {{ movieData | safe }}["tconst"]
@@ -83,11 +56,11 @@
                     fieldName = "numVotes";
                     fieldValue = {{ movieData | safe }}[fieldName];
                 }
-                text = text + "<input type=\"radio\" name=\"" + div_id + "\" value="
-                 + {{ movieData | safe }}[fieldName] + " checked" + ">Yes - "
+                text = text + "<input type=\"checkBox\" name=\"" + div_id + "\" value="
+                 + {{ movieData | safe }}[fieldName] + ">" + fieldName + " - "
                  + fieldValue + "<br>";
-                text = text + "<input type=\"radio\" name=\"" + div_id +
-                        "\" value=\"no" + "\">No<br>";
+                // text = text + "<input type=\"radio\" name=\"" + div_id +
+                //         "\" value=\"no" + "\">No<br>";
                 document.getElementById(div_id).innerHTML = text;
             }
         </script>
