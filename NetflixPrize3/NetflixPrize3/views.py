@@ -136,6 +136,14 @@ def feedback(request):
     if user_movie_entry["numVotes"] != 'no':
         log_file.write("Number of Votes - " + user_movie_entry["numVotes"][0] + "\n")
 
+    user_movie_entry["metascore"] = [request.POST.get("metascore", "no")]
+    if user_movie_entry["metascore"] != 'no':
+        log_file.write("Metacritic Score - " + user_movie_entry["metascore"][0] + "\n")
+
+    user_movie_entry["critics_reviews_count"] = [request.POST.get("critics_reviews_count", "no")]
+    if user_movie_entry["critics_reviews_count"] != 'no':
+        log_file.write("Critics Reviews Count - " + user_movie_entry["critics_reviews_count"][0] + "\n")
+
     log_file.write("\n")
     log_file.flush()
     os.fsync(log_file.fileno())

@@ -39,8 +39,8 @@
                 }
                 document.getElementById(div_id).innerHTML = text;
             }
-            function feature_boolean(div_id) {
-                var text = document.getElementById(div_id).innerHTML;
+            function feature_boolean(div_id,block_id) {
+                var text = "";
                 var fieldValue;
                 if(div_id == "year") {
                     fieldName = "startYear";
@@ -54,12 +54,20 @@
                     fieldName = "numVotes";
                     fieldValue = {{ movieData | safe }}[fieldName];
                 }
+                else if(div_id == "metascore") {
+                    fieldName = "metascore";
+                    fieldValue = {{ movieData | safe }}[fieldName];
+                }
+                else if(div_id == "critics_reviews_count") {
+                    fieldName = "critics_reviews_count";
+                    fieldValue = {{ movieData | safe }}[fieldName];
+                }
                 text = text + "<input type=\"checkBox\" name=\"" + div_id + "\" value="
                  + {{ movieData | safe }}[fieldName] + ">" + fieldName + " - "
                  + fieldValue + "<br>";
                 // text = text + "<input type=\"radio\" name=\"" + div_id +
                 //         "\" value=\"no" + "\">No<br>";
-                document.getElementById(div_id).innerHTML = text;
+                document.getElementById(block_id).innerHTML += text;
             }
         </script>
 
@@ -120,39 +128,39 @@
             <label for"dislike">Not likely: </label>
             <input name="likeChoice" id="dislike" type="radio" value="dislike">
 
-            <div class="box1_top">
+            <div class="box1">
                 <h3>Because Genre(s)</h3>
-                <h3>Because the Rating affects</h3>
-                <h3>Because the Number of Votes affects</h3>
-                <h3>Because Cast(s)</h3>
+                <h3>Because of IMDB Factor(s)</h3>
+                <h3>Because of Metacritic Factor(s)</h3>
             </div>
 
             <div class="box">
-                <div id="genres" class="container_top"></div>
-                <div id="rating" class="container_top"></div>
-                <div id="numVotes" class="container_top"></div>
-                <div id="casts" class="container_top"></div>
+                <div id="genres" class="container"></div>
+                <div id="imdb" class="container"></div>
+                <div id="meta" class="container"></div>
             </div>
 
             <div class="box1">
+                <h3>Because Cast(s)</h3>
                 <h3>Because Director(s)</h3>
                 <h3>Because Writer(s)</h3>
-                <h3>Because the Year affects</h3>
             </div>
 
             <div class="box">
+                <div id="casts" class="container"></div>
                 <div id="directors" class="container"></div>
                 <div id="writers" class="container"></div>
-                <div id="year" class="container"></div>
             </div>
             <script type="text/javascript">
                 feature_box("genres","genres");
-                feature_boolean("rating");
-                feature_boolean("numVotes");
+                feature_boolean("rating","imdb");
+                feature_boolean("numVotes","imdb");
                 feature_box("cast_name","casts");
                 feature_box("directors_names","directors");
                 feature_box("writers_names","writers");
-                feature_boolean("year");
+                feature_boolean("year","imdb");
+                feature_boolean("metascore","meta");
+                feature_boolean("critics_reviews_count","meta");
                 movie_link();
                 document.getElementById("m_name").innerHTML =
                     "Title of recommended movie: " + {{movieData|safe}}["primaryTitle"];
