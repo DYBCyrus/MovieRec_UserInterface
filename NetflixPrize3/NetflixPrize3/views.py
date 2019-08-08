@@ -338,6 +338,7 @@ def train(X,Y):
 
     logCoef = logClf.sparsify().coef_
     """
+    Construct the coeficient array of this movie
     fetchFeatures passes a dictionary
     """
     featToCoef = {}
@@ -367,7 +368,43 @@ def train(X,Y):
 
     sortedLogFeat = sorted(featToCoef.items(), key=operator.itemgetter(1), reverse=True)
 
-    utility.plot_features(sortedLogFeat)
+    utility.plot_features(sortedLogFeat, "MovieFeats", "Movie")
+
+    """
+    Construct the coeficient array of this user
+    """
+    featToCoef = {}
+    for movie in seen_movies:
+        if movie == "dummy":
+            continue
+        movie_name = movie.split("(")[0]
+        movie_year = movie.split("(")[1][0:4]
+        movieIndex = df.query('primaryTitle == "%s" and startYear == %s' % (movie_name, movie_year)).index[0]
+        target_movie = movies_feat[movieIndex,:].toarray()[0].tolist()
+        for k,v in enumerate(target_movie):
+            if v != 0:
+                if type(onehot_index_to_feat[k]) == str and onehot_index_to_feat[k].startswith('c_'):
+                    c = onehot_index_to_feat[k].split('c_')[1]
+                    featToCoef["Cast_" + c] = logCoef[0, k]
+                elif type(onehot_index_to_feat[k]) == str and onehot_index_to_feat[k].startswith('d_'):
+                    d = onehot_index_to_feat[k].split('d_')[1]
+                    featToCoef["Director_" + d] = logCoef[0, k]
+                elif type(onehot_index_to_feat[k]) == str and onehot_index_to_feat[k].startswith('w_'):
+                    w = onehot_index_to_feat[k].split('w_')[1]
+                    featToCoef["Writer_" + w] = logCoef[0, k]
+                elif type(onehot_index_to_feat[k]) == str and onehot_index_to_feat[k].startswith('g_'):
+                    g = onehot_index_to_feat[k].split('g_')[1]
+                    featToCoef["Genre_" + g] = logCoef[0, k]
+                elif k == len(onehot_feat_to_index)-1:
+                    featToCoef["NumVotes"] = logCoef[0, k]
+                elif k == len(onehot_feat_to_index)-2:
+                    featToCoef["Rating"] = logCoef[0, k]
+                else:
+                    featToCoef["Decade_{}".format(onehot_index_to_feat[k])] = logCoef[0, k]
+
+    sortedLogFeat = sorted(featToCoef.items(), key=operator.itemgetter(1), reverse=True)
+
+    utility.plot_features(sortedLogFeat, "UserFeats", "User Profile")
 
     print(index_to_movie_title_year[log_recommended_movie])
 
