@@ -39,7 +39,10 @@ likeExists = False
 twoSelectionsExist = False
 logistic = False
 log_file = None
-min_rating = max_rating = min_numVotes = max_numVotes = mean_rating = mean_numVotes = 0
+mean_rating = mean_numVotes = mean_metascore = mean_critic_count = 0
+numVotes_scaler = preprocessing.MinMaxScaler()
+metascore_scaler = preprocessing.MinMaxScaler()
+critics_count_scaler = preprocessing.MinMaxScaler()
 
 def button(request):
     # print(os.getcwd())
@@ -136,6 +139,14 @@ def feedback(request):
     if user_movie_entry["numVotes"] != 'no':
         log_file.write("Number of Votes - " + user_movie_entry["numVotes"][0] + "\n")
 
+    user_movie_entry["metascore"] = [request.POST.get("metascore", "no")]
+    if user_movie_entry["metascore"] != 'no':
+        log_file.write("Metacritic Score - " + user_movie_entry["metascore"][0] + "\n")
+
+    user_movie_entry["critics_reviews_count"] = [request.POST.get("critics_reviews_count", "no")]
+    if user_movie_entry["critics_reviews_count"] != 'no':
+        log_file.write("Critics Reviews Count - " + user_movie_entry["critics_reviews_count"][0] + "\n")
+
     log_file.write("\n")
     log_file.flush()
     os.fsync(log_file.fileno())
@@ -188,24 +199,43 @@ def get_column(matrix, i):
     return [row[i] for row in matrix]
 
 def features_construction():
-    global movies_feat, col, mean_rating, mean_numVotes, df, df1
+    global movies_feat, col, mean_rating, mean_numVotes, df, df1, mean_metascore, mean_critic_count
+    global numVotes_scaler, metascore_scaler, critics_count_scaler
     # read data
     df = pd.read_csv('Combined_Dataset_Final.csv')
     df1 = df.copy()
     df['numVotes'] = df['numVotes'].apply(lambda x: math.log(x,10)).copy()
+    df['critics_reviews_count'] = df['critics_reviews_count'].apply(lambda x: math.log(x,10)).copy()
 
     '''
     reference: https://chrisalbon.com/python/data_wrangling/pandas_normalize_column/
     '''
     x = df[['numVotes']].values.astype(float)
-    # Create a minimum and maximum processor object
-    min_max_scaler = preprocessing.MinMaxScaler()
+    numVotes_scaler.fit(x)
     # Create an object to transform the data to fit minmax processor
-    x_scaled = min_max_scaler.fit_transform(x)
+    x_scaled = numVotes_scaler.transform(x)
     # Run the normalizer on the dataframe
     df_normalized = pd.DataFrame(x_scaled, columns=['norm_numVotes'])
 
     df['numVotes'] = df_normalized['norm_numVotes'].values
+
+    x = df[['metascore']].values.astype(float)
+    metascore_scaler.fit(x)
+    # Create an object to transform the data to fit minmax processor
+    x_scaled = metascore_scaler.transform(x)
+    # Run the normalizer on the dataframe
+    df_normalized = pd.DataFrame(x_scaled, columns=['norm_metascore'])
+
+    df['metascore'] = df_normalized['norm_metascore'].values
+    
+    x = df[['critics_reviews_count']].values.astype(float)
+    critics_count_scaler.fit(x)
+    # Create an object to transform the data to fit minmax processor
+    x_scaled = critics_count_scaler.transform(x)
+    # Run the normalizer on the dataframe
+    df_normalized = pd.DataFrame(x_scaled, columns=['norm_critics_reviews_count'])
+
+    df['critics_reviews_count'] = df_normalized['norm_critics_reviews_count'].values
 
     # data in numpy
     data = df.values
@@ -219,7 +249,7 @@ def features_construction():
 
         # create list for one hot encoding
         onehot_list = list(set(cast_list + director_list + writers_list + genre_list + year_list)) \
-            + ["rating"] + ["numVotes"]
+            + ["metascore"] + ["critics_reviews_count"] + ["rating"] + ["numVotes"]
         onehot_indices = list(np.arange(0,len(onehot_list),1))
         onehot_feat_to_index = dict(zip(onehot_list,onehot_indices))
         onehot_index_to_feat = dict(zip(onehot_indices,onehot_list))
@@ -240,6 +270,8 @@ def features_construction():
 
     mean_rating = df['averageRating'].mean()
     mean_numVotes = df['numVotes'].mean()
+    mean_metascore = df['metascore'].mean()
+    mean_critic_count = df['critics_reviews_count'].mean()
 
     if movies_feat.shape == (1,1):
         movies_feat = lil_matrix((len(data),len(onehot_feat_to_index)))
@@ -269,6 +301,11 @@ def features_construction():
             # numVotes
             movies_feat[i,len(onehot_feat_to_index)-1] = m[col["numVotes"]]
 
+            # metascore
+            movies_feat[i,len(onehot_feat_to_index)-4] = m[col["metascore"]]
+            # critics_reviews_count
+            movies_feat[i,len(onehot_feat_to_index)-3] = m[col["critics_reviews_count"]]
+
     if not os.path.exists("index_to_movie.pkl") or not os.path.exists("index_to_rate_vote.pkl"):
         f = open("index_to_movie.pkl","wb")
         pickle.dump(index_to_movie,f)
@@ -283,7 +320,9 @@ def features_construction():
     return onehot_feat_to_index, onehot_index_to_feat, index_to_movie, index_to_rate_vote
 
 def convert_to_feat(movie_entry, label):
-    global onehot_feat_to_index, current_user_feat_X, current_user_feat_Y, mean_rating, mean_numVotes
+    global onehot_feat_to_index, current_user_feat_X, current_user_feat_Y
+    global mean_rating, mean_numVotes, mean_metascore, mean_critic_count
+    global numVotes_scaler, metascore_scaler, critics_count_scaler
     feat = np.zeros(len(onehot_feat_to_index))
     # cast
     for c in movie_entry["cast_name"]:
@@ -301,6 +340,7 @@ def convert_to_feat(movie_entry, label):
     if movie_entry["startYear"][0] != "no":
         decade = int(int(movie_entry["startYear"][0])/10) * 10
         feat[onehot_feat_to_index[decade]] = 1
+
     # rating
     magicRating = mean_rating
     if movie_entry["rating"][0] != "no":
@@ -311,20 +351,42 @@ def convert_to_feat(movie_entry, label):
             np.mean(np.array(current_user_feat_X)[satisfied_Y][:,len(onehot_feat_to_index)-2]) \
                 if len(satisfied_Y) > 0 else magicRating
     # numVotes
-    magicNumVotes = mean_numVotes
+    magicNumVotes = numVotes_scaler.transform([[math.log(mean_numVotes,10)]])[0]
     if movie_entry["numVotes"][0] != "no":
-        feat[len(onehot_feat_to_index)-1] = math.log(float(movie_entry["numVotes"][0]),10)
+        feat[len(onehot_feat_to_index)-1] = numVotes_scaler.transform(\
+            [[math.log(float(movie_entry["numVotes"][0]),10)]])[0]
     else:
         satisfied_Y = np.where(np.array(current_user_feat_Y) == label)[0]
         feat[len(onehot_feat_to_index)-1] = \
             np.mean(np.array(current_user_feat_X)[satisfied_Y][:,len(onehot_feat_to_index)-1]) \
                 if len(satisfied_Y) > 0 else magicNumVotes
 
+    # metascore
+    magicMetaRating = metascore_scaler.transform([[mean_metascore]])[0]
+    if movie_entry["metascore"][0] != "no":
+        feat[len(onehot_feat_to_index)-4] = metascore_scaler.transform(\
+            [[float(movie_entry["metascore"][0])]])[0]
+    else:
+        satisfied_Y = np.where(np.array(current_user_feat_Y) == label)[0]
+        feat[len(onehot_feat_to_index)-4] = \
+            np.mean(np.array(current_user_feat_X)[satisfied_Y][:,len(onehot_feat_to_index)-4]) \
+                if len(satisfied_Y) > 0 else magicMetaRating
+    # critics_reviews_count
+    magicCriticsCount = critics_count_scaler.transform([[math.log(mean_critic_count,10)]])[0]
+    if movie_entry["critics_reviews_count"][0] != "no":
+        feat[len(onehot_feat_to_index)-3] = critics_count_scaler.transform(\
+            [[math.log(float(movie_entry["critics_reviews_count"][0]),10)]])[0]
+    else:
+        satisfied_Y = np.where(np.array(current_user_feat_Y) == label)[0]
+        feat[len(onehot_feat_to_index)-3] = \
+            np.mean(np.array(current_user_feat_X)[satisfied_Y][:,len(onehot_feat_to_index)-3]) \
+                if len(satisfied_Y) > 0 else magicCriticsCount
+
     return feat
 
 def train(X,Y):
     global onehot_index_to_feat, movies_feat, index_to_movie_title_year, index_to_movie_rating_numVotes
-    global min_rating, max_rating, min_numVotes, max_numVotes, seen_movies
+    global seen_movies
     X = lil_matrix(X)
 
     print("Start training LogisticRegression")
@@ -362,6 +424,12 @@ def train(X,Y):
                     = logCoef[0, k] * v
             elif k == len(onehot_feat_to_index)-2:
                 featToCoef["Rating_{}".format(index_to_movie_rating_numVotes[log_recommended_movie][0])] \
+                    = logCoef[0, k] * v
+            elif k == len(onehot_feat_to_index)-3:
+                featToCoef["CriticCounts_{}".format(index_to_movie_rating_numVotes[log_recommended_movie][3])] \
+                    = logCoef[0, k] * v
+            elif k == len(onehot_feat_to_index)-4:
+                featToCoef["MetaScore_{}".format(index_to_movie_rating_numVotes[log_recommended_movie][2])] \
                     = logCoef[0, k] * v
             else:
                 featToCoef["Decade_{}".format(onehot_index_to_feat[k])] = logCoef[0, k]
