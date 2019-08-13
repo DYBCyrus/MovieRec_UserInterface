@@ -227,7 +227,7 @@ def features_construction():
     df_normalized = pd.DataFrame(x_scaled, columns=['norm_metascore'])
 
     df['metascore'] = df_normalized['norm_metascore'].values
-    
+
     x = df[['critics_reviews_count']].values.astype(float)
     critics_count_scaler.fit(x)
     # Create an object to transform the data to fit minmax processor
@@ -434,7 +434,7 @@ def train(X,Y):
             else:
                 featToCoef["Decade_{}".format(onehot_index_to_feat[k])] = logCoef[0, k]
 
-    sortedLogFeat = sorted(featToCoef.items(), key=operator.itemgetter(1), reverse=True)
+    sortedLogFeat = sorted(featToCoef.items(), key=lambda x: math.fabs(operator.itemgetter(1)(x)), reverse=True)
 
     utility.plot_features(sortedLogFeat, "MovieFeats", "Movie")
 
