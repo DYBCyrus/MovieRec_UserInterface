@@ -474,7 +474,7 @@ def train(X,Y):
                 else:
                     featToCoef["Decade_{}".format(onehot_index_to_feat[k])] = logCoef[0, k]
 
-    sortedLogFeat = sorted(featToCoef.items(), key=operator.itemgetter(1), reverse=True)
+    sortedLogFeat = sorted(featToCoef.items(), key=lambda x: math.fabs(operator.itemgetter(1)(x)), reverse=True)
 
     utility.plot_features(sortedLogFeat, "UserFeats", "User Profile")
 
