@@ -467,6 +467,10 @@ def train(X,Y):
                     featToCoef["NumVotes"] = logCoef[0, k]
                 elif k == len(onehot_feat_to_index)-2:
                     featToCoef["Rating"] = logCoef[0, k]
+                elif k == len(onehot_feat_to_index)-3:
+                    featToCoef["CriticCounts"] = logCoef[0, k]
+                elif k == len(onehot_feat_to_index)-4:
+                    featToCoef["MetaScore"] = logCoef[0, k]
                 else:
                     featToCoef["Decade_{}".format(onehot_index_to_feat[k])] = logCoef[0, k]
 
