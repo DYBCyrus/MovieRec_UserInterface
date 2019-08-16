@@ -62,6 +62,10 @@
                     fieldName = "critics_reviews_count";
                     fieldValue = {{ movieData | safe }}[fieldName];
                 }
+                else if(div_id == "synopsis") {
+                    fieldName = "synopsis";
+                    fieldValue = "It appeals to me!";
+                }
                 text = text + "<input type=\"checkBox\" name=\"" + div_id + "\" value="
                  + {{ movieData | safe }}[fieldName] + ">" + fieldName + " - "
                  + fieldValue + "<br>";
@@ -128,28 +132,30 @@
             <label for"dislike">Not likely: </label>
             <input name="likeChoice" id="dislike" type="radio" value="dislike">
 
-            <div class="box1">
+            <div class="box1_top">
                 <h3>Because Genre(s)</h3>
                 <h3>Because of IMDB Factor(s)</h3>
                 <h3>Because of Metacritic Factor(s)</h3>
+                <h3>Because of Synopsis</h3>
             </div>
 
-            <div class="box">
+            <div class="box_top">
                 <div id="genres" class="container"></div>
                 <div id="imdb" class="container"></div>
                 <div id="meta" class="container"></div>
+                <div id="synopsis" class="container"></div>
             </div>
 
-            <div class="box1">
+            <div class="box1_bottom">
                 <h3>Because Cast(s)</h3>
                 <h3>Because Director(s)</h3>
                 <h3>Because Writer(s)</h3>
             </div>
 
-            <div class="box">
-                <div id="casts" class="container"></div>
-                <div id="directors" class="container"></div>
-                <div id="writers" class="container"></div>
+            <div class="box_bottom">
+                <div id="casts" class="container1"></div>
+                <div id="directors" class="container1"></div>
+                <div id="writers" class="container1"></div>
             </div>
             <script type="text/javascript">
                 feature_box("genres","genres");
@@ -161,6 +167,7 @@
                 feature_boolean("year","imdb");
                 feature_boolean("metascore","meta");
                 feature_boolean("critics_reviews_count","meta");
+                feature_boolean("synopsis","synopsis");
                 movie_link();
                 document.getElementById("m_name").innerHTML =
                     "Title of recommended movie: " + {{movieData|safe}}["primaryTitle"];

@@ -7,13 +7,29 @@
 
 .container {
     border:2px solid #ccc;
+    width:280px;
+    height: 200px;
+    overflow-y: scroll;
+    overflow-x: scroll;
+}
+
+.container1 {
+    border:2px solid #ccc;
     width:400px;
     height: 200px;
     overflow-y: scroll;
     overflow-x: scroll;
 }
 
-.box {
+.box_top {
+    display: grid;
+    height: 200px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 100px;
+    column-gap: 20px;
+}
+
+.box_bottom {
     display: grid;
     height: 200px;
     grid-template-columns: repeat(3, 1fr);
@@ -21,7 +37,15 @@
     column-gap: 20px;
 }
 
-.box1 {
+.box1_top {
+    display: grid;
+    height: 50px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 100px;
+    column-gap: 20px;
+}
+
+.box1_bottom {
     display: grid;
     height: 50px;
     grid-template-columns: repeat(3, 1fr);
