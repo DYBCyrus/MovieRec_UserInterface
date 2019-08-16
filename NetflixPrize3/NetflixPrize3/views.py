@@ -393,10 +393,28 @@ def train(X,Y):
     logClf = LogisticRegression(random_state = 0, max_iter=100, solver='liblinear', penalty='l2').fit(X, Y)
 
     logPreds = logClf.predict_proba(movies_feat)
+    """
+    recommend movie based on probability
+    """
+    C = 10
+    transformed_logPreds = np.exp(C*logPreds[:,-1])
+    transformed_logPreds = transformed_logPreds / np.linalg.norm(transformed_logPreds,ord=1)
+    log_recommended_movie = np.random.choice(len(logPreds),1,p=transformed_logPreds)[0]
+    while index_to_movie_title_year[log_recommended_movie] in seen_movies:
+        log_recommended_movie = np.random.choice(len(logPreds),1,p=transformed_logPreds)
+    print(logPreds[log_recommended_movie][1])
+
+    """
+    recommend argmax movie
+    """
     log_ascending_recommended_movie = np.argsort(logPreds[:,-1])
-    for log_recommended_movie in log_ascending_recommended_movie[::-1]:
-        if index_to_movie_title_year[log_recommended_movie] not in seen_movies:
-            break
+    print(logPreds[log_ascending_recommended_movie[-1]][1])
+    print("largest in new:",np.max(transformed_logPreds))
+    print("should be large:",transformed_logPreds[log_ascending_recommended_movie[-1]])
+    print("not as large as above:",transformed_logPreds[log_recommended_movie])
+    # for log_recommended_movie in log_ascending_recommended_movie[::-1]:
+    #     if index_to_movie_title_year[log_recommended_movie] not in seen_movies:
+    #         break
 
     logCoef = logClf.sparsify().coef_
     """
