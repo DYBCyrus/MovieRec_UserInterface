@@ -396,12 +396,12 @@ def train(X,Y):
     """
     recommend movie based on probability
     """
-    C = 10
+    C = 50
     transformed_logPreds = np.exp(C*logPreds[:,-1])
     transformed_logPreds = transformed_logPreds / np.linalg.norm(transformed_logPreds,ord=1)
     log_recommended_movie = np.random.choice(len(logPreds),1,p=transformed_logPreds)[0]
     while index_to_movie_title_year[log_recommended_movie] in seen_movies:
-        log_recommended_movie = np.random.choice(len(logPreds),1,p=transformed_logPreds)
+        log_recommended_movie = np.random.choice(len(logPreds),1,p=transformed_logPreds)[0]
     print(logPreds[log_recommended_movie][1])
 
     """
