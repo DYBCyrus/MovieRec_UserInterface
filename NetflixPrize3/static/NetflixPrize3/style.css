@@ -1,58 +1,58 @@
-.ui-autocomplete {
+.box_bottom {
+    column-gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 100px;
     height: 200px;
-    width: 300px;
-    overflow-y: scroll;
-    overflow-x: scroll;
+}
+
+.box1_bottom {
+    column-gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 100px;
+    height: 50px;
+}
+
+.box_top {
+    column-gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 100px;
+    height: 200px;
+}
+
+.box1_top {
+    column-gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 100px;
+    height: 50px;
 }
 
 .container {
     border:2px solid #ccc;
-    width:280px;
     height: 200px;
-    overflow-y: scroll;
     overflow-x: scroll;
+    overflow-y: scroll;
+    width:280px;
 }
 
 .container1 {
     border:2px solid #ccc;
-    width:400px;
     height: 200px;
-    overflow-y: scroll;
     overflow-x: scroll;
+    overflow-y: scroll;
+    width:400px;
 }
 
-.box_top {
-    display: grid;
+.search-box {
+    width: 300px;
+}
+
+.ui-autocomplete {
     height: 200px;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: 100px;
-    column-gap: 20px;
-}
-
-.box_bottom {
-    display: grid;
-    height: 200px;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: 100px;
-    column-gap: 20px;
-}
-
-.box1_top {
-    display: grid;
-    height: 50px;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: 100px;
-    column-gap: 20px;
-}
-
-.box1_bottom {
-    display: grid;
-    height: 50px;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: 100px;
-    column-gap: 20px;
-}
-
-#title {
+    overflow-x: scroll;
+    overflow-y: scroll;
     width: 300px;
 }
