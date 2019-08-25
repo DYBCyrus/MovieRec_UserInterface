@@ -40,6 +40,7 @@ twoSelectionsExist = False
 logistic = False
 log_file = None
 mean_rating = mean_numVotes = mean_metascore = mean_critic_count = 0
+rating_scaler = preprocessing.MinMaxScaler()
 numVotes_scaler = preprocessing.MinMaxScaler()
 metascore_scaler = preprocessing.MinMaxScaler()
 critics_count_scaler = preprocessing.MinMaxScaler()
@@ -202,7 +203,7 @@ def get_column(matrix, i):
 
 def features_construction():
     global movies_feat, col, mean_rating, mean_numVotes, df, df1, mean_metascore, mean_critic_count
-    global numVotes_scaler, metascore_scaler, critics_count_scaler
+    global rating_scaler, numVotes_scaler, metascore_scaler, critics_count_scaler
     # read data
     df = pd.read_csv('Combined_Dataset_Final.csv')
     df1 = df.copy()
@@ -212,6 +213,15 @@ def features_construction():
     '''
     reference: https://chrisalbon.com/python/data_wrangling/pandas_normalize_column/
     '''
+    x = df[['averageRating']].values.astype(float)
+    rating_scaler.fit(x)
+    # Create an object to transform the data to fit minmax processor
+    x_scaled = rating_scaler.transform(x)
+    # Run the normalizer on the dataframe
+    df_normalized = pd.DataFrame(x_scaled, columns=['norm_rating'])
+
+    df['averageRating'] = df_normalized['norm_rating'].values
+
     x = df[['numVotes']].values.astype(float)
     numVotes_scaler.fit(x)
     # Create an object to transform the data to fit minmax processor
@@ -324,7 +334,7 @@ def features_construction():
 def convert_to_feat(movie_entry, label):
     global onehot_feat_to_index, current_user_feat_X, current_user_feat_Y
     global mean_rating, mean_numVotes, mean_metascore, mean_critic_count
-    global numVotes_scaler, metascore_scaler, critics_count_scaler
+    global rating_scaler, numVotes_scaler, metascore_scaler, critics_count_scaler
     feat = np.zeros(len(onehot_feat_to_index))
     # cast
     for c in movie_entry["cast_name"]:
@@ -344,9 +354,10 @@ def convert_to_feat(movie_entry, label):
         feat[onehot_feat_to_index[decade]] = 1
 
     # rating
-    magicRating = mean_rating
+    magicRating = rating_scaler.transform([[mean_rating]])[0]
     if movie_entry["rating"][0] != "no":
-        feat[len(onehot_feat_to_index)-2] = float(movie_entry["rating"][0])
+        feat[len(onehot_feat_to_index)-2] = rating_scaler.transform(\
+            [[float(movie_entry["averageRating"][0])]])[0]
     else:
         satisfied_Y = np.where(np.array(current_user_feat_Y) == label)[0]
         feat[len(onehot_feat_to_index)-2] = \
@@ -398,9 +409,16 @@ def train(X,Y):
     """
     recommend movie based on probability
     """
-    C = 50
+    C = 10
     transformed_logPreds = np.exp(C*logPreds[:,-1])
     transformed_logPreds = transformed_logPreds / np.linalg.norm(transformed_logPreds,ord=1)
+
+    sorted_transformed_logPreds = np.flip(np.sort(transformed_logPreds))
+    for n in range(len(sorted_transformed_logPreds)):
+        if np.sum(sorted_transformed_logPreds[:n+1]) >= 0.5:
+            print("efficient size of the pool", n+1)
+            break
+
     log_recommended_movie = np.random.choice(len(logPreds),1,p=transformed_logPreds)[0]
     while index_to_movie_title_year[log_recommended_movie] in seen_movies:
         log_recommended_movie = np.random.choice(len(logPreds),1,p=transformed_logPreds)[0]
