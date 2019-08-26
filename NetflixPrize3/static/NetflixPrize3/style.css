@@ -1,4 +1,4 @@
-.box_bottom {
+/* .box-bottom {
     column-gap: 20px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -6,15 +6,15 @@
     height: 200px;
 }
 
-.box1_bottom {
+.box1-bottom {
     column-gap: 20px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: 100px;
     height: 50px;
-}
+} */
 
-.box_top {
+.box-top {
     column-gap: 20px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -22,7 +22,7 @@
     height: 200px;
 }
 
-.box1_top {
+.box1-top {
     column-gap: 20px;
     display: grid;
     grid-template-columns: repeat(4, 1fr);

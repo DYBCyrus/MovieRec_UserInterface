@@ -18,6 +18,7 @@ from sklearn.tree.export import export_text
 from sklearn import preprocessing
 from . import utility
 
+C = 10
 df = pd.DataFrame()
 df1 = pd.DataFrame()
 titles = []
@@ -55,21 +56,24 @@ def button(request):
         index_to_movie_rating_numVotes = features_construction()
     if len(titles) > 0:
         movieEntry = fetchFeatures()
-        return render(request, 'home.html', {'titles':titles, 'movieData': movieEntry})
+        return render(request, 'home.html',
+                      {'titles': titles, 'movieData': movieEntry})
     # df = pd.read_csv('IMDB_Meta_Combined_Final.csv')
     title = df['primaryTitle'].tolist()
     year = df['startYear'].tolist()
     sorted_titles = json.load(open("sorted_movies_for_genres.json"))
-    for (i,j) in zip(title,year):
+    for (i, j) in zip(title, year):
         titles.append(i + '(' + str(int(j)) + ')')
     dir_path = os.getcwd()
-    os.makedirs(os.path.join(dir_path,'logs'), exist_ok=True)
+    os.makedirs(os.path.join(dir_path, 'logs'), exist_ok=True)
     # Create log file here
     # Obtain the time and create a string for file name
     name = "logs/log-" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".log"
     log_file = open(name, "w+")
     movieEntry = fetchFeatures()
-    return render(request, 'home.html', {'titles': titles, 'movieData': movieEntry})
+    return render(request, 'home.html',
+                  {'titles': titles, 'movieData': movieEntry})
+
 
 def fetchFeatures(longTitle="dummy"):
     global df, titles, sorted_titles, seen_movies, log_file, df1
@@ -77,8 +81,8 @@ def fetchFeatures(longTitle="dummy"):
         log_file.write("Random movie: ")
     while longTitle in seen_movies:
         # longTitle = request.POST.get('title', False)
-        gen = random.sample(sorted_titles.keys(),1)[0]
-        rand_sample = random.sample(sorted_titles[gen][:100],1)
+        gen = random.sample(sorted_titles.keys(), 1)[0]
+        rand_sample = random.sample(sorted_titles[gen][:100], 1)
         longTitle = rand_sample[0][0] + "(" + rand_sample[0][1] + ")"
     log_file.write(longTitle + "\n")
     log_file.flush()
@@ -94,10 +98,10 @@ def fetchFeatures(longTitle="dummy"):
     # else:
     #     return render(request, "home.html", {'titles': titles, "titleInvalid":True})
         # Search the movie entry using the title and the startYear
-    movieEntry = df.query('primaryTitle == "%s" and startYear == %d' % (ti, year)).\
-                    iloc[0].to_dict()
-    movieEntry_rate_vote = df1.query('primaryTitle == "%s" and startYear == %d' % (ti, year)).\
-                    iloc[0].to_dict()
+    movieEntry = df.query(
+        'primaryTitle == "%s" and startYear == %d' % (ti, year)).iloc[0].to_dict()
+    movieEntry_rate_vote = df1.query(
+        'primaryTitle == "%s" and startYear == %d' % (ti, year)).iloc[0].to_dict()
 
     movieEntry["directors_names"] = movieEntry["directors_names"].split('/')
     movieEntry["writers_names"] = movieEntry["writers_names"].split('/')
@@ -107,21 +111,29 @@ def fetchFeatures(longTitle="dummy"):
     movieEntry["averageRating"] = movieEntry_rate_vote["averageRating"]
     movieEntry["numVotes"] = movieEntry_rate_vote["numVotes"]
     movieEntry["metascore"] = movieEntry_rate_vote["metascore"]
-    movieEntry["critics_reviews_count"] = movieEntry_rate_vote["critics_reviews_count"]
+    movieEntry["critics_reviews_count"] =\
+        movieEntry_rate_vote["critics_reviews_count"]
 
     seen_movies.append(longTitle)
 
     return movieEntry
 
+
 def feedback(request):
-    global df, titles, current_user_feat_X, current_user_feat_Y, \
-            dislikeExists, likeExists, twoSelectionsExist, logistic, log_file, df1
+    global C, df, df1, titles, current_user_feat_X, current_user_feat_Y, \
+           dislikeExists, likeExists, twoSelectionsExist, logistic, log_file
     user_movie_entry = defaultdict(list)
     likeChoice = request.POST.get('likeChoice', False)
     log_file.write("The user " + likeChoice + "d this movie \n")
-    log_file.write("The follwing features played a role in the user preference:\n")
+    log_file.write(
+            "The follwing features played a role in the user preference:\n")
 
-
+    randomness_change = request.POST.get('randomness', False)
+    change_constant = 0.75
+    if randomness_change == "more":
+        C /= change_constant
+    elif randomness_change == "less":
+        C *= change_constant
     # print(request.POST.get("genres", "N/A")[1])
     feat_list = ["directors_names", "writers_names", "cast_name", "genres"]
     for feat in feat_list:
@@ -185,21 +197,23 @@ def feedback(request):
 helper functions to do feature matching/cleaning (copied from previous notebook)
 """
 # column indices
-col = {'tconst':0,
-    'primaryTitle':1,
-    'startYear':2,
-    'genres':3,
-    'directors_names':4,
-    'writers_names':5,
-    'cast_name':6,
-    'averageRating':7,
-    'numVotes':8,
-    'metascore':9,
-    'critics_reviews_count':10,
-    'description':11}
+col = {'tconst': 0,
+       'primaryTitle': 1,
+       'startYear': 2,
+       'genres': 3,
+       'directors_names': 4,
+       'writers_names': 5,
+       'cast_name': 6,
+       'averageRating': 7,
+       'numVotes': 8,
+       'metascore': 9,
+       'critics_reviews_count': 10,
+       'description': 11}
+
 
 def get_column(matrix, i):
     return [row[i] for row in matrix]
+
 
 def features_construction():
     global movies_feat, col, mean_rating, mean_numVotes, df, df1, mean_metascore, mean_critic_count
@@ -397,9 +411,10 @@ def convert_to_feat(movie_entry, label):
 
     return feat
 
+
 def train(X,Y):
     global onehot_index_to_feat, movies_feat, index_to_movie_title_year, index_to_movie_rating_numVotes
-    global seen_movies
+    global seen_movies, C
     X = lil_matrix(X)
 
     print("Start training LogisticRegression")
@@ -409,7 +424,7 @@ def train(X,Y):
     """
     recommend movie based on probability
     """
-    C = 10
+
     transformed_logPreds = np.exp(C*logPreds[:,-1])
     transformed_logPreds = transformed_logPreds / np.linalg.norm(transformed_logPreds,ord=1)
 

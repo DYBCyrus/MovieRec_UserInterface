@@ -3,14 +3,14 @@
     <head>
         {% load static %}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js" async></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js" async></script>
         <link rel="stylesheet" type="text/css" href="{% static 'NetflixPrize3/style.css' %}">
         <meta charset="utf-8">
         <title>NetflixPrize3!</title>
 
         <!-- The following script defines parameters for the autocomplete -->
-        <script type="text/javascript">
+        <!-- <script type="text/javascript">
             var arr = {{ titles|safe }};
             $(function() {
                 $("#title").autocomplete({
@@ -22,58 +22,7 @@
                     },
                 });
             });
-        </script>
-        <script>
-            function movie_link() {
-                text = {{ movieData | safe }}["description"]
-                document.getElementById("link").innerHTML += text;
-            }
-            function feature_box(key,div_id) {
-                var feat = {{ movieData | safe }}[key];
-                var i;
-                var text = document.getElementById(div_id).innerHTML;
-                for(i = 0; i < feat.length; i++){
-                    text = text + "<input type=\"checkbox\" name=\"" + key
-                            + "\" value=\"" + key.charAt(0)
-                            + "_" + feat[i] + "\">" + feat[i] + "<br>";
-                }
-                document.getElementById(div_id).innerHTML = text;
-            }
-            function feature_boolean(div_id,block_id) {
-                var text = "";
-                var fieldValue;
-                if(div_id == "year") {
-                    fieldName = "startYear";
-                    fieldValue = {{ movieData | safe }}[fieldName];
-                }
-                else if(div_id == "rating") {
-                    fieldName = "averageRating";
-                    fieldValue = {{ movieData | safe }}[fieldName];
-                }
-                else if(div_id == "numVotes") {
-                    fieldName = "numVotes";
-                    fieldValue = {{ movieData | safe }}[fieldName];
-                }
-                else if(div_id == "metascore") {
-                    fieldName = "metascore";
-                    fieldValue = {{ movieData | safe }}[fieldName];
-                }
-                else if(div_id == "critics_reviews_count") {
-                    fieldName = "critics_reviews_count";
-                    fieldValue = {{ movieData | safe }}[fieldName];
-                }
-                else if(div_id == "synopsis") {
-                    fieldName = "synopsis";
-                    fieldValue = "It appeals to me!";
-                }
-                text = text + "<input type=\"checkBox\" name=\"" + div_id + "\" value="
-                 + {{ movieData | safe }}[fieldName] + ">" + fieldName + " - "
-                 + fieldValue + "<br>";
-                // text = text + "<input type=\"radio\" name=\"" + div_id +
-                //         "\" value=\"no" + "\">No<br>";
-                document.getElementById(block_id).innerHTML += text;
-            }
-        </script>
+        </script> -->
 
         <!-- The following script is for submitting a title -->
         <!-- <script type="text/javascript">
@@ -119,7 +68,7 @@
 
         {% endif %}
 
-        <h2 id="m_name"></h2>
+        <h2 id="m-name"></h2>
         <h3 id="link">Synopsis: </h3>
 
         {% if movieData is not None %}
@@ -132,32 +81,101 @@
             <label for="dislike">Not likely: </label>
             <input name="likeChoice" id="dislike" type="radio" value="dislike">
 
-            <div class="box1_top">
+            <div class="box1-top">
                 <h3>Because Genre(s)</h3>
                 <h3>Because of IMDB Factor(s)</h3>
                 <h3>Because of Metacritic Factor(s)</h3>
                 <h3>Because of Synopsis</h3>
             </div>
 
-            <div class="box_top">
+            <div class="box-top">
                 <div id="genres" class="container"></div>
                 <div id="imdb" class="container"></div>
                 <div id="meta" class="container"></div>
                 <div id="synopsis" class="container"></div>
             </div>
 
-            <div class="box1_bottom">
+            <div class="box1-top">
                 <h3>Because Cast(s)</h3>
                 <h3>Because Director(s)</h3>
                 <h3>Because Writer(s)</h3>
+                <h3>Recommendations should be</h3>
             </div>
 
-            <div class="box_bottom">
-                <div id="casts" class="container1"></div>
-                <div id="directors" class="container1"></div>
-                <div id="writers" class="container1"></div>
+            <div class="box-top">
+                <div id="casts" class="container"></div>
+                <div id="directors" class="container"></div>
+                <div id="writers" class="container"></div>
+                <div id="randomness" class="container"></div>
             </div>
+
             <script type="text/javascript">
+                function movie_link() {
+                    text = {{ movieData | safe }}["description"]
+                    document.getElementById("link").innerHTML += text;
+                }
+                function feature_box(key,div_id) {
+                    var feat = {{ movieData | safe }}[key];
+                    var i;
+                    var text = document.getElementById(div_id).innerHTML;
+                    for(i = 0; i < feat.length; i++){
+                        text = text + "<input type=\"checkbox\" name=\"" + key
+                                + "\" value=\"" + key.charAt(0)
+                                + "_" + feat[i] + "\">" + feat[i] + "<br>";
+                    }
+                    document.getElementById(div_id).innerHTML = text;
+                }
+                function feature_boolean(box_id, div_id) {
+                    var text = "";
+                    var fieldValue;
+                    var fieldText;
+                    if(box_id == "year") {
+                        fieldName = "startYear";
+                        fieldValue = {{ movieData | safe }}[fieldName];
+                    }
+                    else if(box_id == "rating") {
+                        fieldName = "averageRating";
+                        fieldValue = {{ movieData | safe }}[fieldName];
+                    }
+                    else if(box_id == "numVotes") {
+                        fieldName = "numVotes";
+                        fieldValue = {{ movieData | safe }}[fieldName];
+                    }
+                    else if(box_id == "metascore") {
+                        fieldName = "metascore";
+                        fieldValue = {{ movieData | safe }}[fieldName];
+                    }
+                    else if(box_id == "critics_reviews_count") {
+                        fieldName = "critics_reviews_count";
+                        fieldValue = {{ movieData | safe }}[fieldName];
+                    }
+                    else if(box_id == "synopsis") {
+                        fieldName = "synopsis";
+                        fieldText = "The synopsis appeals to me!";
+                        fieldValue = "appeal"
+                    }
+                    else if(box_id == "randomness") {
+                        fieldName = "randomness";
+                        fieldValue = "more"
+                        fieldText = "more random"
+                        text = "<input type=\"checkBox\" name=\"" + box_id + "\" value="
+                         + fieldValue + ">" + fieldText + "<br>";
+
+                        fieldValue = "less"
+                        fieldText = "less random"
+                        text += "<input type=\"checkBox\" name=\"" + box_id + "\" value="
+                         + fieldValue + ">" + fieldText + "<br>";
+                        document.getElementById(div_id).innerHTML += text;
+                        return;
+                    }
+                    if (!fieldText) {
+                        fieldText = fieldName + " - " + fieldValue;
+                    }
+                    text = "<input type=\"checkBox\" name=\"" + box_id + "\" value="
+                     + fieldValue + ">" + fieldText + "<br>";
+                    document.getElementById(div_id).innerHTML += text;
+                }
+
                 feature_box("genres","genres");
                 feature_boolean("rating","imdb");
                 feature_boolean("numVotes","imdb");
@@ -168,8 +186,9 @@
                 feature_boolean("metascore","meta");
                 feature_boolean("critics_reviews_count","meta");
                 feature_boolean("synopsis","synopsis");
+                feature_boolean("randomness", "randomness")
                 movie_link();
-                document.getElementById("m_name").innerHTML =
+                document.getElementById("m-name").innerHTML =
                     "Title of recommended movie: " + {{movieData|safe}}["primaryTitle"];
             </script>
             </form>
@@ -184,8 +203,8 @@
 
         {% if logistic %}
         <div>
-            <img src="{% static 'NetflixPrize3/ContrMovieFeats.png' %}">
-            <img src="{% static 'NetflixPrize3/ContrUserFeats.png' %}">
+            <img alt="Main contributing features for the movie" src="{% static 'NetflixPrize3/ContrMovieFeats.png' %}">
+            <img alt="Main features of the user profile" src="{% static 'NetflixPrize3/ContrUserFeats.png' %}">
         </div>
         {% endif %}
 
