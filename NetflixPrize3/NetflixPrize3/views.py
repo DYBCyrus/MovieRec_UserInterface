@@ -45,9 +45,11 @@ numVotes_scaler = preprocessing.MinMaxScaler()
 metascore_scaler = preprocessing.MinMaxScaler()
 critics_count_scaler = preprocessing.MinMaxScaler()
 
+
 def button(request):
     # print(os.getcwd())
-    global df, titles, sorted_titles, onehot_feat_to_index, onehot_index_to_feat, df1
+    global df, titles, sorted_titles, df1
+    global onehot_index_to_feat, onehot_feat_to_index
     global index_to_movie_title_year, index_to_movie_rating_numVotes, log_file
     onehot_feat_to_index, onehot_index_to_feat, index_to_movie_title_year, \
         index_to_movie_rating_numVotes = features_construction()

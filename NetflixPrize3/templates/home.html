@@ -105,7 +105,7 @@
             <!-- onsubmit="return post();"  -->
             <form method="post" action="/fetchFeatures">
                 {% csrf_token %}
-                <input type="text" id="title" name="title">
+                <input type="text" class="search-box" name="title">
             </form>
         </div> {% endcomment %}
 
@@ -129,7 +129,7 @@
             <label for="like">Yes: </label>
             <input name="likeChoice" id="like" type="radio" value="like" required>
 
-            <label for"dislike">Not likely: </label>
+            <label for="dislike">Not likely: </label>
             <input name="likeChoice" id="dislike" type="radio" value="dislike">
 
             <div class="box1_top">

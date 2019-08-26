@@ -133,10 +133,8 @@ dmypy.json
 *.json
 *.pkl
 NetflixPrize3/Untitled.ipynb
-NetflixPrize3/adult.data
-NetflixPrize3/static/NetflixPrize3/MainFeatures.png
-NetflixPrize3/static/NetflixPrize3/NegUserFeats.png
-NetflixPrize3/static/NetflixPrize3/NegMovieFeats.png
 NetflixPrize3/static/NetflixPrize3/ContrUserFeats.png
 NetflixPrize3/static/NetflixPrize3/ContrMovieFeats.png
-*.pkl
+NetflixPrize3/node_modules/
+NetflixPrize3/tmdb.ipynb
+.htmlhintrc
