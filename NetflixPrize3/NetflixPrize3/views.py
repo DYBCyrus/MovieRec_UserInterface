@@ -371,7 +371,7 @@ def convert_to_feat(movie_entry, label):
     magicRating = rating_scaler.transform([[mean_rating]])[0]
     if movie_entry["rating"][0] != "no":
         feat[len(onehot_feat_to_index)-2] = rating_scaler.transform(\
-            [[float(movie_entry["averageRating"][0])]])[0]
+            [[float(movie_entry["rating"][0])]])[0]
     else:
         satisfied_Y = np.where(np.array(current_user_feat_Y) == label)[0]
         feat[len(onehot_feat_to_index)-2] = \
@@ -445,7 +445,6 @@ def train(X,Y):
     log_ascending_recommended_movie = np.argsort(logPreds[:,-1])
     print(logPreds[log_ascending_recommended_movie[-1]][1])
     print("largest in new:",np.max(transformed_logPreds))
-    print("should be large:",transformed_logPreds[log_ascending_recommended_movie[-1]])
     print("not as large as above:",transformed_logPreds[log_recommended_movie])
     # for log_recommended_movie in log_ascending_recommended_movie[::-1]:
     #     if index_to_movie_title_year[log_recommended_movie] not in seen_movies:
