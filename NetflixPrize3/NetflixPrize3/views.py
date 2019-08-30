@@ -131,9 +131,9 @@ def feedback(request):
     randomness_change = request.POST.get('randomness', False)
     change_constant = 0.75
     if randomness_change == "more":
-        C /= change_constant
-    elif randomness_change == "less":
         C *= change_constant
+    elif randomness_change == "less":
+        C /= change_constant
     # print(request.POST.get("genres", "N/A")[1])
     feat_list = ["directors_names", "writers_names", "cast_name", "genres"]
     for feat in feat_list:
