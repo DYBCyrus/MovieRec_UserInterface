@@ -45,6 +45,7 @@ rating_scaler = preprocessing.MinMaxScaler()
 numVotes_scaler = preprocessing.MinMaxScaler()
 metascore_scaler = preprocessing.MinMaxScaler()
 critics_count_scaler = preprocessing.MinMaxScaler()
+num_initial_recommend = 5
 
 
 def button(request):
@@ -121,7 +122,8 @@ def fetchFeatures(longTitle="dummy"):
 
 def feedback(request):
     global C, df, df1, titles, current_user_feat_X, current_user_feat_Y, \
-           dislikeExists, likeExists, twoSelectionsExist, logistic, log_file
+           dislikeExists, likeExists, twoSelectionsExist, logistic, log_file, \
+           num_initial_recommend
     user_movie_entry = defaultdict(list)
     likeChoice = request.POST.get('likeChoice', False)
     log_file.write("The user " + likeChoice + "d this movie \n")
@@ -176,7 +178,7 @@ def feedback(request):
 
     ex = None
     recommended = None
-    if len(current_user_feat_X) > 4 and twoSelectionsExist:
+    if len(current_user_feat_X) >= num_initial_recommend and twoSelectionsExist:
         ex, recommended = train(np.array(current_user_feat_X),np.array(current_user_feat_Y))
 
     # lime = False
@@ -533,3 +535,39 @@ def train(X,Y):
     print(index_to_movie_title_year[log_recommended_movie])
 
     return "explanation", index_to_movie_title_year[log_recommended_movie]
+
+# DL_model = {}
+
+# def trainDL(X,Y):
+#     global onehot_index_to_feat, movies_feat, index_to_movie_title_year, index_to_movie_rating_numVotes
+#     global seen_movies, num_initial_recommend, DL_model
+
+#     if len(X) == 1:
+#         for (i,j),value in np.ndenumerate(X):
+#             pos_or_neg = Y[i] if Y[i] == 1 else -1
+#             if value == 1:
+#                 DL_model[j] = (1,1) if pos_or_neg == 1 else (0,-1)
+#             elif value != 0:
+#                 DL_model[j] = (value,1)
+#     else:
+#         if Y[len(X)-1] != 1:
+#             for j,value in enumerate(X[-1]):
+#                 if value == 1:
+#                     DL_model[j] = (0,-1)
+#                 elif value != 0 and value >= DL_model[j][0]:
+#                     DL_model[j] = (value,1)
+
+#     rec_movies = []
+#     decision_list = DL_model.items()
+#     for idx,row in enumerate(movies_feat.toarray()):
+#         if sum([(row[x[0]] - x[1][0])*x[1][1] >= 0 for x in decision_list]) == len(decision_list):
+#             rec_movies.append(idx)
+
+#     recommended_movie = random.sample(rec_movies,1)[0]
+#     print(len(rec_movies))
+#     while index_to_movie_title_year[recommended_movie] in seen_movies:
+#         recommended_movie = random.sample(rec_movies,1)[0]
+
+#     print("decision list features:",[(onehot_index_to_feat[x[0]],x[1][0],x[1][1]) for x in decision_list])
+
+#     return "explanation", index_to_movie_title_year[recommended_movie]
