@@ -536,38 +536,62 @@ def train(X,Y):
 
     return "explanation", index_to_movie_title_year[log_recommended_movie]
 
-# DL_model = {}
+"""
+DL_model (dictionary): a decision list containing decision rules
+                        - key: index of the feature
+                        - value: a tuple (a,b), where a stands for the value of the feature
+                            and b stands for positive/negative feedback
+                            for example: if user likes 'Comedy' --> DL_model['Comedy_index'] = (1,1)
+                            if user doesn't like 'Horror' --> DL_model['Horror_index'] = (0,-1)
+                            if user likes rating greater than 5 --> DL_model['Rating_index'] = (5,1)
+"""
+DL_model = {}
 
-# def trainDL(X,Y):
-#     global onehot_index_to_feat, movies_feat, index_to_movie_title_year, index_to_movie_rating_numVotes
-#     global seen_movies, num_initial_recommend, DL_model
+def trainDL(X,Y):
+    global onehot_index_to_feat, movies_feat, index_to_movie_title_year, index_to_movie_rating_numVotes
+    global seen_movies, num_initial_recommend, DL_model
 
-#     if len(X) == 1:
-#         for (i,j),value in np.ndenumerate(X):
-#             pos_or_neg = Y[i] if Y[i] == 1 else -1
-#             if value == 1:
-#                 DL_model[j] = (1,1) if pos_or_neg == 1 else (0,-1)
-#             elif value != 0:
-#                 DL_model[j] = (value,1)
-#     else:
-#         if Y[len(X)-1] != 1:
-#             for j,value in enumerate(X[-1]):
-#                 if value == 1:
-#                     DL_model[j] = (0,-1)
-#                 elif value != 0 and value >= DL_model[j][0]:
-#                     DL_model[j] = (value,1)
+    if len(X) == 1:
+        for (i,j),value in np.ndenumerate(X):
+            pos_or_neg = Y[i] if Y[i] == 1 else -1
+            if value == 1:
+                DL_model[j] = (1,1) if pos_or_neg == 1 else (0,-1)
+            elif value != 0:
+                DL_model[j] = (value,1)
+    else:
+        if Y[len(X)-1] != 1:
+            for j,value in enumerate(X[-1]):
+                if value == 1:
+                    DL_model[j] = (0,-1)
+                elif value != 0 and value >= DL_model[j][0]:
+                    DL_model[j] = (value,1)
 
-#     rec_movies = []
-#     decision_list = DL_model.items()
-#     for idx,row in enumerate(movies_feat.toarray()):
-#         if sum([(row[x[0]] - x[1][0])*x[1][1] >= 0 for x in decision_list]) == len(decision_list):
-#             rec_movies.append(idx)
+    rec_movies = []
+    decision_list = DL_model.items()
+    for idx,row in enumerate(movies_feat.toarray()):
+        """
+        row: one feature vector of a movie
+        idx: index of the movie
+        x: one (key,value) tuple in DL_model
+        x[0]: index of one feature
+        x[1][0]: value of the feature, x[1][1]: pos/neg feedback (see above comment for details)
+        { (row[x[0]] - x[1][0])*x[1][1] >= 0 } represents if row[x[0]] qualifies the feature requirment
+        of index x[0]
+            for example: rating must be greater than 6 --> (7-6)*1 >= 0 ==> qualified
+                                                           (3-6)*1 < 0 ==> unqualified
+                         like comedy --> (1-1)*1 >= 0 ==> qualified (movies with comedy index == 1)
+                                         (0-1)*1 < 0 ==> unqualified (movies with comedy index == 0)
+                         hate horror --> (0-0)*-1 >= 0 ==> qualified (movies with horror index == 0)
+                                         (1-0)*-1 < 0 ==> unqualified (movies with horror index == 1)
+        """
+        if sum([(row[x[0]] - x[1][0])*x[1][1] >= 0 for x in decision_list]) == len(decision_list):
+            rec_movies.append(idx)
 
-#     recommended_movie = random.sample(rec_movies,1)[0]
-#     print(len(rec_movies))
-#     while index_to_movie_title_year[recommended_movie] in seen_movies:
-#         recommended_movie = random.sample(rec_movies,1)[0]
+    recommended_movie = random.sample(rec_movies,1)[0]
+    print(len(rec_movies))
+    while index_to_movie_title_year[recommended_movie] in seen_movies:
+        recommended_movie = random.sample(rec_movies,1)[0]
 
-#     print("decision list features:",[(onehot_index_to_feat[x[0]],x[1][0],x[1][1]) for x in decision_list])
+    print("decision list features:",[(onehot_index_to_feat[x[0]],x[1][0],x[1][1]) for x in decision_list])
 
-#     return "explanation", index_to_movie_title_year[recommended_movie]
+    return "explanation", index_to_movie_title_year[recommended_movie]
