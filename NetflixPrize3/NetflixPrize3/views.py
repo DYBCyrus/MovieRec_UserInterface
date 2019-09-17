@@ -25,15 +25,11 @@ titles = []
 sorted_titles = []
 onehot_feat_to_index = {}
 onehot_index_to_feat = {}
-seen_movies = ["dummy"]
-# movies that user has chosen
+seen_movies = ["dummy"]                 # movies that user has chosen
 current_user_feat_X = []
 current_user_feat_Y = []
-# all movies feature vector
 movies_feat = lil_matrix(0)
-# index to movie title + year
 index_to_movie_title_year = {}
-# index to movie imdb-rating,imdb-numvote,critic-rating,critic-numvote
 index_to_movie_rating_numVotes = {}
 dislikeExists = False
 likeExists = False
@@ -49,39 +45,44 @@ num_initial_recommend = 5
 
 
 def button(request):
-    # print(os.getcwd())
     global df, titles, sorted_titles, df1
     global onehot_index_to_feat, onehot_feat_to_index
     global index_to_movie_title_year, index_to_movie_rating_numVotes, log_file
-    onehot_feat_to_index, onehot_index_to_feat, index_to_movie_title_year, \
-        index_to_movie_rating_numVotes = features_construction()
+
+    features_construction()
+
     if len(titles) > 0:
         movieEntry = fetchFeatures()
         return render(request, 'home.html',
                       {'titles': titles, 'movieData': movieEntry})
-    # df = pd.read_csv('IMDB_Meta_Combined_Final.csv')
     title = df['primaryTitle'].tolist()
     year = df['startYear'].tolist()
     sorted_titles = json.load(open("sorted_movies_for_genres.json"))
     for (i, j) in zip(title, year):
         titles.append(i + '(' + str(int(j)) + ')')
+
+    # Create log file here
     dir_path = os.getcwd()
     os.makedirs(os.path.join(dir_path, 'logs'), exist_ok=True)
-    # Create log file here
-    # Obtain the time and create a string for file name
     name = "logs/log-" + datetime.now().strftime("%Y%m%d-%H%M%S") + ".log"
     log_file = open(name, "w+")
+
     movieEntry = fetchFeatures()
+
     return render(request, 'home.html',
                   {'titles': titles, 'movieData': movieEntry})
 
 
-def fetchFeatures(longTitle="dummy"):
+def fetchFeatures(longTitle: str = "dummy") -> dict:
+    """Return a dictionary of movie features
+
+    This method takes the title in the format of "title(year)", prints this
+    recommendated movie to the log file, and fetches features for the movie.
+    """
     global df, titles, sorted_titles, seen_movies, log_file, df1
     if longTitle == "dummy":
         log_file.write("Random movie: ")
     while longTitle in seen_movies:
-        # longTitle = request.POST.get('title', False)
         gen = random.sample(sorted_titles.keys(), 1)[0]
         rand_sample = random.sample(sorted_titles[gen][:100], 1)
         longTitle = rand_sample[0][0] + "(" + rand_sample[0][1] + ")"
@@ -93,16 +94,11 @@ def fetchFeatures(longTitle="dummy"):
     if longTitle:
         title = longTitle.split('(')
         ti = title[0]
-        # if (df.query('primaryTitle == "%s"' % (ti))).empty:
-        #     return render(request, "home.html", {'titles': titles, "titleInvalid":True})
         year = int(title[1].split(')')[0])
-    # else:
-    #     return render(request, "home.html", {'titles': titles, "titleInvalid":True})
-        # Search the movie entry using the title and the startYear
-    movieEntry = df.query(
-        'primaryTitle == "%s" and startYear == %d' % (ti, year)).iloc[0].to_dict()
-    movieEntry_rate_vote = df1.query(
-        'primaryTitle == "%s" and startYear == %d' % (ti, year)).iloc[0].to_dict()
+    movieEntry = df.query('primaryTitle == "%s" and startYear == %d'
+                          % (ti, year)).iloc[0].to_dict()
+    movieEntry_rate_vote = df1.query('primaryTitle == "%s" and startYear == %d'
+                                     % (ti, year)).iloc[0].to_dict()
 
     movieEntry["directors_names"] = movieEntry["directors_names"].split('/')
     movieEntry["writers_names"] = movieEntry["writers_names"].split('/')
@@ -121,9 +117,18 @@ def fetchFeatures(longTitle="dummy"):
 
 
 def feedback(request):
+    """Renders the next recommendation.
+
+    This method is called every time a feedback is made. It adds the
+    new feedback entry to the feature list, calls train() to train
+    a new model and use it to recommend one movie. Then log the activity
+    and renders the new web page.
+    """
+
     global C, df, df1, titles, current_user_feat_X, current_user_feat_Y, \
-           dislikeExists, likeExists, twoSelectionsExist, logistic, log_file, \
-           num_initial_recommend
+        dislikeExists, likeExists, twoSelectionsExist, logistic, log_file, \
+        num_initial_recommend
+
     user_movie_entry = defaultdict(list)
     likeChoice = request.POST.get('likeChoice', False)
     log_file.write("The user " + likeChoice + "d this movie \n")
@@ -143,26 +148,30 @@ def feedback(request):
         if temp != "N/A":
             user_movie_entry[feat] = temp
             # print(" ".join(temp) if temp != "N/A" else "N/A")
-            log_file.write(feat.capitalize() + ": " + " ".join(temp) +"\n")
-    user_movie_entry["startYear"] = [request.POST.get("year","no")]
+            log_file.write(feat.capitalize() + ": " + " ".join(temp) + "\n")
+    user_movie_entry["startYear"] = [request.POST.get("year", "no")]
     if user_movie_entry["startYear"] != 'no':
         log_file.write("Year - " + user_movie_entry["startYear"][0] + "\n")
 
-    user_movie_entry["rating"] = [request.POST.get("rating","no")]
+    user_movie_entry["rating"] = [request.POST.get("rating", "no")]
     if user_movie_entry["rating"] != 'no':
         log_file.write("Rating - " + user_movie_entry["rating"][0] + "\n")
 
     user_movie_entry["numVotes"] = [request.POST.get("numVotes", "no")]
     if user_movie_entry["numVotes"] != 'no':
-        log_file.write("Number of Votes - " + user_movie_entry["numVotes"][0] + "\n")
+        log_file.write("Number of Votes - " +
+                       user_movie_entry["numVotes"][0] + "\n")
 
     user_movie_entry["metascore"] = [request.POST.get("metascore", "no")]
     if user_movie_entry["metascore"] != 'no':
-        log_file.write("Metacritic Score - " + user_movie_entry["metascore"][0] + "\n")
+        log_file.write("Metacritic Score - " +
+                       user_movie_entry["metascore"][0] + "\n")
 
-    user_movie_entry["critics_reviews_count"] = [request.POST.get("critics_reviews_count", "no")]
+    user_movie_entry["critics_reviews_count"] = \
+        [request.POST.get("critics_reviews_count", "no")]
     if user_movie_entry["critics_reviews_count"] != 'no':
-        log_file.write("Critics Reviews Count - " + user_movie_entry["critics_reviews_count"][0] + "\n")
+        log_file.write("Critics Reviews Count - " +
+                       user_movie_entry["critics_reviews_count"][0] + "\n")
 
     log_file.write("\n")
     log_file.flush()
@@ -179,7 +188,8 @@ def feedback(request):
     ex = None
     recommended = None
     if len(current_user_feat_X) >= num_initial_recommend and twoSelectionsExist:
-        ex, recommended = train(np.array(current_user_feat_X),np.array(current_user_feat_Y))
+        ex, recommended = train(np.array(current_user_feat_X),
+                                np.array(current_user_feat_Y))
 
     # lime = False
     if request.POST.get('fetch', 'Random') == 'Recommend' and recommended:
@@ -191,14 +201,13 @@ def feedback(request):
         # lime = True
     else:
         movieEntry = fetchFeatures()
-    return render(request, "home.html", {'titles': titles, "movieData": movieEntry,\
-        "explanation": ex, "logistic":logistic})
+    return render(request, "home.html", {'titles': titles,
+                                         "movieData": movieEntry,
+                                         "explanation": ex,
+                                         "logistic": logistic})
 
 
-"""
-helper functions to do feature matching/cleaning (copied from previous notebook)
-"""
-# column indices
+# column indices for feature matching/cleaning (copied from previous notebook)
 col = {'tconst': 0,
        'primaryTitle': 1,
        'startYear': 2,
@@ -218,16 +227,23 @@ def get_column(matrix, i):
 
 
 def features_construction():
-    global movies_feat, col, mean_rating, mean_numVotes, df, df1, mean_metascore, mean_critic_count
-    global rating_scaler, numVotes_scaler, metascore_scaler, critics_count_scaler
-    # read data
+    global movies_feat, col, mean_rating, mean_numVotes, df, df1,\
+        mean_metascore, mean_critic_count, rating_scaler, numVotes_scaler,\
+        metascore_scaler, critics_count_scaler
+    global onehot_feat_to_index, onehot_index_to_feat,\
+        index_to_movie_title_year, index_to_movie_rating_numVotes
+
     df = pd.read_csv('Combined_Dataset_Final.csv')
     df1 = df.copy()
-    df['numVotes'] = df['numVotes'].apply(lambda x: math.log(x,10)).copy()
-    df['critics_reviews_count'] = df['critics_reviews_count'].apply(lambda x: math.log(x,10)).copy()
+
+    # Log the number of votes and review counts as a way of normalizaiton
+    df['numVotes'] = df['numVotes'].apply(lambda x: math.log(x, 10)).copy()
+    df['critics_reviews_count'] = df['critics_reviews_count'].apply(
+        lambda x: math.log(x, 10)).copy()
 
     '''
-    reference: https://chrisalbon.com/python/data_wrangling/pandas_normalize_column/
+    reference:
+    https://chrisalbon.com/python/data_wrangling/pandas_normalize_column/
     '''
     x = df[['averageRating']].values.astype(float)
     rating_scaler.fit(x)
@@ -293,8 +309,8 @@ def features_construction():
         onehot_feat_to_index = pickle.load(open("feat_to_index.pkl","rb"))
         onehot_index_to_feat = pickle.load(open("index_to_feat.pkl","rb"))
 
-    index_to_movie = {}
-    index_to_rate_vote = {}
+    index_to_movie_title_year = {}
+    index_to_movie_rating_numVotes = {}
 
     mean_rating = df['averageRating'].mean()
     mean_numVotes = df['numVotes'].mean()
@@ -305,8 +321,8 @@ def features_construction():
         movies_feat = lil_matrix((len(data),len(onehot_feat_to_index)))
         for i in range(len(data)):
             m = data[i]
-            index_to_movie[i] = m[col['primaryTitle']] + '(' + str(int(m[col['startYear']])) + ')'
-            index_to_rate_vote[i] = [df1.iloc[i,col['averageRating']], df1.iloc[i,col['numVotes']],\
+            index_to_movie_title_year[i] = m[col['primaryTitle']] + '(' + str(int(m[col['startYear']])) + ')'
+            index_to_movie_rating_numVotes[i] = [df1.iloc[i,col['averageRating']], df1.iloc[i,col['numVotes']],\
                 df1.iloc[i,col['metascore']], df1.iloc[i,col['critics_reviews_count']]]
             # cast
             for c in str(m[col["cast_name"]]).split("/"):
@@ -336,16 +352,15 @@ def features_construction():
 
     if not os.path.exists("index_to_movie.pkl") or not os.path.exists("index_to_rate_vote.pkl"):
         f = open("index_to_movie.pkl","wb")
-        pickle.dump(index_to_movie,f)
+        pickle.dump(index_to_movie_title_year,f)
         f.close()
         f = open("index_to_rate_vote.pkl","wb")
-        pickle.dump(index_to_rate_vote,f)
+        pickle.dump(index_to_movie_rating_numVotes,f)
         f.close()
     else:
-        index_to_movie = pickle.load(open("index_to_movie.pkl","rb"))
-        index_to_rate_vote = pickle.load(open("index_to_rate_vote.pkl","rb"))
+        index_to_movie_title_year = pickle.load(open("index_to_movie.pkl","rb"))
+        index_to_movie_rating_numVotes = pickle.load(open("index_to_rate_vote.pkl","rb"))
 
-    return onehot_feat_to_index, onehot_index_to_feat, index_to_movie, index_to_rate_vote
 
 def convert_to_feat(movie_entry, label):
     global onehot_feat_to_index, current_user_feat_X, current_user_feat_Y
